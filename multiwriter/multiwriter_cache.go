@@ -50,6 +50,7 @@ func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duratio
 
 		// Make this writer self destruct with some cleanup code bofore doing so.
 		return eioutil.NewWriterCloserWithSelfDestructAfterIdle(
+			ctx,
 			ttl,
 			eioutil.NewWriterCloseCallback(wc).AddPreCloseHooks(func() {
 				c.mutex.Lock()

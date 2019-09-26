@@ -2,6 +2,7 @@ package eioutil_test
 
 import (
 	"bytes"
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ func TestTimedSelfDestructAfterIdle(t *testing.T) {
 	m := sync.Mutex{}
 	closeCalled := false
 
-	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(maxIdle, eioutil.NewWriteCloser(&buffer, func() error {
+	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(context.Background(), maxIdle, eioutil.NewWriteCloser(&buffer, func() error {
 		m.Lock()
 		defer m.Unlock()
 		closeCalled = true
@@ -61,7 +62,7 @@ func BenchmarkNewWriterCloserWithSelfDestructAfterIdle(b *testing.B) {
 	var buffer bytes.Buffer
 	maxIdle := time.Second * 2
 	testdata := []byte("this is a test..") //
-	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(maxIdle, eioutil.NewWriteNOPCloser(&buffer))
+	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(context.Background(), maxIdle, eioutil.NewWriteNOPCloser(&buffer))
 	tstart := time.Now()
 	b.StartTimer()
 	for n := 0; n < b.N; n++ {
