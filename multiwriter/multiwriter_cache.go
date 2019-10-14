@@ -3,8 +3,6 @@ package multiwriter
 import (
 	"context"
 	"fmt"
-	"io"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -18,34 +16,66 @@ import (
 // if a writer is requested and doesn't exist it gets created (using the provided factory). Writers that aren't
 // used for long enough are automatically closed. All writers are also closed on the ctx.Done.
 type Cache struct {
-	ctx            context.Context
-	cxtCancel      func()
-	mutex          *sync.RWMutex
-	writerFactory  WriterFactory
-	writers        map[string]eioutil.WriteCloser
-	ttl            time.Duration
-	writersCreated int
-	maxCacheSize   int
+	ctx             context.Context
+	cxtCancel       func()
+	mutex           *sync.RWMutex
+	writerFactory   WriterFactory
+	writers         map[string]*timedWriter
+	ttl             time.Duration
+	writersCreated  int
+	maxCacheEntires int
+}
+
+type timedWriter struct {
+	eioutil.WriteCloser
+
+	lastAccessMutex sync.RWMutex
+	lastAccess      time.Time
+}
+
+func (tw *timedWriter) updateTs() {
+	if tw == nil {
+		return
+	}
+
+	tw.lastAccessMutex.Lock()
+	defer tw.lastAccessMutex.Unlock()
+	tw.lastAccess = time.Now()
+}
+
+func (tw *timedWriter) getTs() time.Time {
+	tw.lastAccessMutex.RLock()
+	defer tw.lastAccessMutex.RUnlock()
+	return tw.lastAccess
 }
 
 // NewCache will dynamically open writers for writing and close them on inactivity
-func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duration, maxCacheSize int) *Cache {
+func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duration, maxCacheEntires int) *Cache {
 	ctx, cancel := context.WithCancel(ctx)
 	c := &Cache{
-		ctx:            ctx,
-		cxtCancel:      cancel,
-		mutex:          &sync.RWMutex{},
-		writerFactory:  nil,
-		writers:        map[string]eioutil.WriteCloser{},
-		ttl:            ttl,
-		writersCreated: 0,
-		maxCacheSize:   maxCacheSize,
+		ctx:             ctx,
+		cxtCancel:       cancel,
+		mutex:           &sync.RWMutex{},
+		writerFactory:   nil,
+		writers:         map[string]*timedWriter{},
+		ttl:             ttl,
+		writersCreated:  0,
+		maxCacheEntires: maxCacheEntires,
 	}
 
 	c.writerFactory = func(path string) (wc eioutil.WriteCloser, err error) {
-		wc, err = writerFactory(path)
+		// Suffix should be an always lexographically increasing id
+		suffix := fmt.Sprintf("%d_%04d", time.Now().Unix(), c.writersCreated)
+		newSuffixedPath := strings.Replace(path, "{suffix}", suffix, -1)
+
+		wc, err = writerFactory(newSuffixedPath)
 		if err != nil {
 			return wc, err
+		}
+
+		if maxCacheEntires > 0 && len(c.writers) > maxCacheEntires {
+			//log.Printf("Cache is %d and max is %d; pruing", len(c.writers), maxCacheEntires)
+			go c.pruneCache()
 		}
 
 		// Make this writer self destruct with some cleanup code bofore doing so.
@@ -55,12 +85,31 @@ func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duratio
 			eioutil.NewWriterCloseCallback(wc).AddPreCloseHooks(func() {
 				c.mutex.Lock()
 				defer c.mutex.Unlock()
-				delete(c.writers, path)
+				if _, ok := c.writers[path]; ok {
+					delete(c.writers, path)
+				}
 			}),
 		), nil
 	}
 
 	return c
+}
+
+func (mfw *Cache) pruneCache() {
+	path := ""
+	lastUpdated := time.Now()
+
+	mfw.mutex.Lock()
+	for p, tw2 := range mfw.writers {
+		if tw2.getTs().Before(lastUpdated) {
+			lastUpdated = tw2.getTs()
+			path = p
+		}
+	}
+	mfw.mutex.Unlock()
+
+	mfw.ClosePath(path)
+	return
 }
 
 // Close closes all opened writers; will continue on error and return all (if any) errors
@@ -85,8 +134,8 @@ func (mfw *Cache) Close() error {
 
 // ClosePath closes one specific path; will return nil if the path doesn't exist or is already closed; Otherwise the reuslt of the writer Close function.
 func (mfw *Cache) ClosePath(path string) error {
-	mfw.mutex.Lock()
 
+	mfw.mutex.Lock()
 	writer, ok := mfw.writers[path]
 	if !ok {
 		mfw.mutex.Unlock()
@@ -97,10 +146,12 @@ func (mfw *Cache) ClosePath(path string) error {
 	return writer.Close()
 }
 
-func (mfw *Cache) getWriter(path string) (io.Writer, error) {
+func (mfw *Cache) getWriter(path string) (*timedWriter, error) {
 	// Let's start with a lightweight read lock
 	mfw.mutex.RLock()
+
 	writer, ok := mfw.writers[path]
+	defer writer.updateTs()
 	if ok {
 		mfw.mutex.RUnlock()
 		return writer, nil
@@ -110,34 +161,30 @@ func (mfw *Cache) getWriter(path string) (io.Writer, error) {
 	// OK let's grab a write lock
 	mfw.mutex.Lock()
 	defer mfw.mutex.Unlock()
-	// Double check that a writer hasn't been created after we released the lock
+	// Double check that a writer hasn't been created after we released (and regrabbed) the lock
 	writer, ok = mfw.writers[path]
 	if ok {
 		return writer, nil
 	}
 
-	// Suffix should be an always lexographically increasing id
-	suffix := fmt.Sprintf("%d_%d", mfw.writersCreated, time.Now().Unix())
-	newSuffixedPath := strings.Replace(path, "{suffix}", suffix, -1)
-
 	// Create new writer and save for later
-	writer, err := mfw.writerFactory(newSuffixedPath)
+	w, err := mfw.writerFactory(path)
 	if err != nil {
 		return nil, err
 	}
+
+	writer = &timedWriter{WriteCloser: w}
 	mfw.writers[path] = writer
 	mfw.writersCreated++
 
 	return writer, nil
 }
 
-// GetWriter gets an existing writers for the path or creates one and saves it for later re-use. If the path contains {suffix}
+// Write gets an existing writers for the path or creates one and saves it for later re-use. If the path contains {suffix}
 // it will be replaced by a unique counter + timestamp.
 func (mfw *Cache) Write(path string, p []byte) (int, error) {
-	select {
-	case <-mfw.ctx.Done():
-		return 0, context.Canceled
-	default:
+	if err := mfw.ctx.Err(); err != nil {
+		return 0, err
 	}
 
 	writer, err := mfw.getWriter(path)
@@ -148,7 +195,8 @@ func (mfw *Cache) Write(path string, p []byte) (int, error) {
 	if n, err := writer.Write(p); err == nil {
 		return n, nil
 	} else if err == eioutil.ErrAlreadyClosed { // Make once race condition less likely
-		log.Printf("Retrying write as ErrAlreadyClosed")
+		//log.Printf("Retrying write as ErrAlreadyClosed")
+		//ClosePath(path) // Remove it from our system
 		return mfw.Write(path, p)
 	} else {
 		return n, err

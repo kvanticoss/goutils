@@ -1,7 +1,6 @@
 package iterator_test
 
 import (
-	"log"
 	"testing"
 
 	"github.com/kvanticoss/goutils/iterator"
@@ -9,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSortedRecordIterators(t *testing.T) {
+func TestSortedRecordBufferIterators(t *testing.T) {
 
 	e, err := iterator.SortedRecordIterators([]iterator.RecordIterator{
 		getRecordIterator(1, 3),
@@ -51,7 +50,7 @@ func TestSortedRecordIterators(t *testing.T) {
 	}
 }
 
-func BenchmarkSortedRecordIterators(b *testing.B) {
+func BenchmarkSortedRecordBufferIterators(b *testing.B) {
 	b.Run("1000 rows x 2 streams", func(b *testing.B) {
 		amount := 1000
 		for n := 0; n < b.N; n++ {
@@ -156,29 +155,4 @@ func BenchmarkSortedRecordIterators(b *testing.B) {
 		}
 	})
 
-}
-
-func BenchmarkLargeBench(b *testing.B) {
-	amount := 1000000
-	for n := 0; n < b.N; n++ {
-		b.StopTimer()
-		e, err := iterator.SortedRecordIterators([]iterator.RecordIterator{
-			getRecordIterator(1, amount),
-			getRecordIterator(2, amount),
-			getRecordIterator(2, amount),
-			getRecordIterator(2, amount),
-			getRecordIterator(3, amount),
-			getRecordIterator(5, amount),
-			getRecordIterator(2, amount),
-			getRecordIterator(7, amount),
-			getRecordIterator(2, amount),
-			getRecordIterator(10, amount)})
-		if err != nil {
-			b.Fatal(err)
-			return
-		}
-		b.StartTimer()
-		for _, err := e(); err == nil; _, err = e() {
-		}
-	}
 }

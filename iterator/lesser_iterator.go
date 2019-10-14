@@ -21,6 +21,9 @@ type Lesser interface {
 // LesserIterator iterators is the function interface
 type LesserIterator func() (Lesser, error)
 
+// LesserIteratorClustered iterators is the function interface
+type LesserIteratorClustered func() (int, Lesser, error)
+
 func (it RecordIterator) toLesserIterator() LesserIterator {
 	return func() (Lesser, error) {
 		record, err := it()

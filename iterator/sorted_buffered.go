@@ -20,19 +20,23 @@ func NewBufferedRecordIteratorBTree(ctx context.Context, ri LesserIterator, buff
 	var lastErr error
 
 	go func() {
-		var val Lesser
 		for {
-			val, lastErr = ri()
-			if lastErr == nil {
+			val, err := ri()
 
-				mu.Lock()
+			mu.Lock()
+			if err == nil {
 				tree.ReplaceOrInsert(btreeLesser{val})
-				mu.Unlock()
-
-				if tree.Len() >= bufferSize {
+				if bufferSize > 0 && tree.Len() >= bufferSize {
+					mu.Unlock()        // inside if/else statement to avoid race detector in tests. btree.Len() / Reads are ok to call concurrently but this cause race:y results the go test suite complains about.
 					bufferFull <- true // cap
+				} else {
+					mu.Unlock()
 				}
+			} else {
+				lastErr = err
+				mu.Unlock()
 			}
+
 			if lastErr == ErrIteratorStop {
 				cancel()
 				return
@@ -46,9 +50,11 @@ func NewBufferedRecordIteratorBTree(ctx context.Context, ri LesserIterator, buff
 
 	// Sorted iterator
 	return func() (Lesser, error) {
-		select {
-		case <-bufferFull:
-		case <-ctx.Done():
+		if bufferSize > 0 {
+			select {
+			case <-bufferFull:
+			case <-ctx.Done():
+			}
 		}
 
 		mu.Lock()

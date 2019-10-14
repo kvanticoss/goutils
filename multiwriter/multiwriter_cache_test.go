@@ -14,6 +14,7 @@ import (
 )
 
 func TestMultiFileStreamingWithNoTimeout(t *testing.T) {
+
 	ctx := context.Background()
 	db := map[string]*bytes.Buffer{}
 	wf := func(path string) (wc eioutil.WriteCloser, err error) {
