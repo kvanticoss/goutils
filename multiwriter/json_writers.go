@@ -34,9 +34,8 @@ func StreamJSONBySortedPartitions(
 		}
 
 		path := maybePartitions(record) + fmt.Sprintf("records_p%04d_s{suffix}.json", partition)
-		if _, err := cache.Write(path, append(d, recordDelimiter...)); err != nil {
 
-			fmt.Println(err.Error())
+		if _, err := cache.Write(path, append(d, recordDelimiter...)); err != nil {
 			return err
 		}
 	}
