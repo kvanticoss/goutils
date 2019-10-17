@@ -4,3 +4,15 @@ package keyvaluelist
 type PartitionGetter interface {
 	GetPartions() (KeyValues, error)
 }
+
+// MaybePartitions returns GetPartions().ToPartitionKey() if the record is of type PartitionGetter; Otherwise it returns ""
+func MaybePartitions(record interface{}) string {
+	if recordPartitioner, ok := record.(PartitionGetter); ok {
+		maybeParts, err := recordPartitioner.GetPartions()
+		if err != nil {
+			return ""
+		}
+		return maybeParts.ToPartitionKey() + "/"
+	}
+	return ""
+}
