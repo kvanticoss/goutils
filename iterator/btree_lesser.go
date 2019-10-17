@@ -9,15 +9,18 @@ type btreeLesser struct {
 	Lesser
 }
 
-func (l btreeLesser) Less(other btree.Item) bool {
+func (l btreeLesser) Less(other btree.Item) (res bool) {
 	if other == nil {
 		return false
 	}
-	if btl, ok := other.(btreeLesser); ok {
-		return l.Lesser.Less(btl.Lesser)
+	if otherL, ok := other.(*btreeLesser); ok && otherL != nil {
+		return l.Lesser.Less(otherL.Lesser)
 	}
-	if btl, ok := other.(*btreeLesser); ok && btl != nil {
-		return l.Lesser.Less(btl.Lesser)
+
+	if otherL, ok := other.(btreeLesser); ok {
+		return l.Lesser.Less(otherL.Lesser)
 	}
+
+	//log.Fatalf("Other is not of type iterator.btreeLesser; it is %#v", other)
 	return l.Lesser.Less(other)
 }

@@ -55,3 +55,54 @@ func SortedRecordIterators(iterators []RecordIterator) (RecordIterator, error) {
 		return bestCandidate, nil
 	}, nil
 }
+
+func SortedLesserIterators(iterators []LesserIterator) (LesserIterator, error) {
+	var err error
+	LesserIterators := make([]LesserIterator, len(iterators))
+	nextCandidates := make([]Lesser, len(iterators))
+	for i, ri := range iterators {
+		nextCandidates[i], err = ri()
+		if err != nil && err != ErrIteratorStop { // Stops are not errors
+			return nil, err
+		}
+	}
+
+	return func() (Lesser, error) {
+		bestIndex := -1
+		var bestCandidate Lesser
+
+		for i, candidate := range nextCandidates {
+			if candidate == nil {
+				continue
+			}
+			if bestIndex == -1 {
+				bestIndex = i
+				bestCandidate = candidate
+				continue
+			}
+
+			if !bestCandidate.Less(candidate) {
+				bestIndex = i
+				bestCandidate = candidate
+			}
+		}
+
+		if bestIndex == -1 {
+			return nil, ErrIteratorStop
+		}
+
+		nextRecord, err := LesserIterators[bestIndex]()
+		if err == ErrIteratorStop {
+			nextCandidates[bestIndex] = nil
+		} else if err != nil {
+			nextCandidates[bestIndex] = nil
+			return nil, err
+		} else if l, ok := nextRecord.(Lesser); !ok {
+			return nil, ErrNotLesser
+		} else {
+			nextCandidates[bestIndex] = l
+		}
+
+		return bestCandidate, nil
+	}, nil
+}

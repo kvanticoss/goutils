@@ -94,7 +94,6 @@ func TestMultiJSONStreamingWithNoTimeout(t *testing.T) {
 			}}
 
 			it := iterator.NewBufferedClusterIteartor(
-				ctx,
 				test_utils.GetRandomLesserIterator(
 					99999,
 					test.values, //number of items
@@ -103,7 +102,7 @@ func TestMultiJSONStreamingWithNoTimeout(t *testing.T) {
 				test.buffersize, // Number to cache in ram before writing
 			)
 
-			assert.EqualError(t, multiwriter.StreamJSONBySortedPartitions(ctx, it, c), "iterator stop")
+			assert.EqualError(t, multiwriter.StreamJSONBySortedPartitions(it, c, multiwriter.DefaultPathbuilder), "iterator stop")
 			partitionsContent := []byte{}
 			for key, val := range db {
 				//t.Log("Checking partition:" + key)
@@ -144,13 +143,12 @@ func BenchmarkJsonWriter(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		b.StopTimer()
 		it := iterator.NewBufferedClusterIteartor(
-			ctx,
 			test_utils.GetRandomLesserIterator(maxConcurrentPartions*20, bufferSize*scale, keyvaluelist.KeyValues{}),
 			bufferSize, // Number to cache in ram before writing
 		)
 		pre := time.Now()
 		b.StartTimer()
-		multiwriter.StreamJSONBySortedPartitions(ctx, it, c)
+		multiwriter.StreamJSONBySortedPartitions(it, c, multiwriter.DefaultPathbuilder)
 
 		b.Logf(
 			"Exported and sorted %d records with 1%% sorting capacity over %v (%f records / second) using %d distination buckets (allowing for max %d concurrent Partitions)",

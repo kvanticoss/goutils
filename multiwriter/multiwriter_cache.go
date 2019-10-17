@@ -3,6 +3,7 @@ package multiwriter
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -63,9 +64,14 @@ func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duratio
 		maxCacheEntires: maxCacheEntires,
 	}
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = ""
+	}
+
 	c.writerFactory = func(path string) (wc eioutil.WriteCloser, err error) {
 		// Suffix should be an always lexographically increasing id
-		suffix := fmt.Sprintf("%d_%04d", time.Now().Unix(), c.writersCreated)
+		suffix := fmt.Sprintf("%s_%d_%04d", hostname, time.Now().Unix(), c.writersCreated)
 		newSuffixedPath := strings.Replace(path, "{suffix}", suffix, -1)
 
 		wc, err = writerFactory(newSuffixedPath)
@@ -77,6 +83,8 @@ func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duratio
 			//log.Printf("Cache is %d and max is %d; pruing", len(c.writers), maxCacheEntires)
 			go c.pruneCache()
 		}
+
+		wc = eioutil.NewSyncedWriteCloser(wc)
 
 		// Make this writer self destruct with some cleanup code bofore doing so.
 		return eioutil.NewWriterCloserWithSelfDestructAfterIdle(
@@ -104,6 +112,7 @@ func (mfw *Cache) pruneCache() {
 		if tw2.getTs().Before(lastUpdated) {
 			lastUpdated = tw2.getTs()
 			path = p
+			//log.Printf("Found older writer @ %s => %s", path, lastUpdated)
 		}
 	}
 	mfw.mutex.Unlock()
@@ -124,17 +133,48 @@ func (mfw *Cache) Close() error {
 	}
 	mfw.mutex.Unlock()
 
+	wg := sync.WaitGroup{}
 	for path := range writercopy {
-		if err := mfw.ClosePath(path); err != nil { // && err != eioutil.ErrAlreadyClosed { // since we don't want to have a mutex here, chances are that ErrAlreadyClosed can happen
-			allErrors = multierror.Append(allErrors, err)
-		}
+		wg.Add(1)
+		go func(p string) {
+			if err := mfw.ClosePath(p); err != nil { // && err != eioutil.ErrAlreadyClosed { // since we don't want to have a mutex here, chances are that ErrAlreadyClosed can happen
+				mfw.mutex.Lock()
+				allErrors = multierror.Append(allErrors, err)
+				mfw.mutex.Unlock()
+
+			}
+			wg.Done()
+		}(path)
+
 	}
+	wg.Wait()
 	return allErrors.ErrorOrNil()
+}
+
+// RequiresNewWriter checks if the record will fit withing an existing partition
+func (mfw *Cache) RequiresNewWriter(path string) bool {
+	mfw.mutex.Lock()
+	defer mfw.mutex.Unlock()
+
+	_, ok := mfw.writers[path]
+	return !ok
+}
+
+// FreeWriterbuffers checks how many more writers can be opened within the current limit
+func (mfw *Cache) FreeWriterbuffers() int {
+	if mfw.maxCacheEntires < 0 {
+		return 100
+	}
+
+	mfw.mutex.Lock()
+	defer mfw.mutex.Unlock()
+
+	return mfw.maxCacheEntires - len(mfw.writers)
 }
 
 // ClosePath closes one specific path; will return nil if the path doesn't exist or is already closed; Otherwise the reuslt of the writer Close function.
 func (mfw *Cache) ClosePath(path string) error {
-
+	//log.Println("Closing cache path :" + path)
 	mfw.mutex.Lock()
 	writer, ok := mfw.writers[path]
 	if !ok {
@@ -173,7 +213,7 @@ func (mfw *Cache) getWriter(path string) (*timedWriter, error) {
 		return nil, err
 	}
 
-	writer = &timedWriter{WriteCloser: w}
+	writer = &timedWriter{WriteCloser: w, lastAccess: time.Now()}
 	mfw.writers[path] = writer
 	mfw.writersCreated++
 
@@ -183,6 +223,7 @@ func (mfw *Cache) getWriter(path string) (*timedWriter, error) {
 // Write gets an existing writers for the path or creates one and saves it for later re-use. If the path contains {suffix}
 // it will be replaced by a unique counter + timestamp.
 func (mfw *Cache) Write(path string, p []byte) (int, error) {
+	//log.Println("Cache.Write @ path:" + path)
 	if err := mfw.ctx.Err(); err != nil {
 		return 0, err
 	}
@@ -195,8 +236,6 @@ func (mfw *Cache) Write(path string, p []byte) (int, error) {
 	if n, err := writer.Write(p); err == nil {
 		return n, nil
 	} else if err == eioutil.ErrAlreadyClosed { // Make once race condition less likely
-		//log.Printf("Retrying write as ErrAlreadyClosed")
-		//ClosePath(path) // Remove it from our system
 		return mfw.Write(path, p)
 	} else {
 		return n, err

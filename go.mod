@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go/storage v1.0.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/google/btree v1.0.0
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/json-iterator/go v1.1.6
