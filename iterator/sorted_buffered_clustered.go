@@ -1,6 +1,9 @@
 package iterator
 
 import (
+	"sync"
+	"time"
+
 	"github.com/kvanticoss/goutils/keyvaluelist"
 )
 
@@ -76,4 +79,124 @@ func newBufferedClusterIteartor(ri LesserIterator, bufferSize int) LesserIterato
 	}
 
 	return resultingIt
+}
+
+func newBufferedClusterIteartorWithPartitionBuffersV2(ri LesserIterator, bufferSize int) LesserIterator {
+	partitions := map[string]*BtreeSyncedLesser{}
+	inSortQueue := 0
+
+	mu := sync.Mutex{}
+	var lastErr error
+	// Collect records into sorted partitions.
+	// Once the buffer is full (counted over all partitions)
+	// Alternate between phases
+	// 1) Dump the largest partition (until empty, can be refilled during dumping); This might cause a starving pattern of other partitions if the partition is never emptied. TODO: add very small random phase shift
+	// 2) Dump the oldest partition (until empty, can be refilled during dumping);
+
+	findLargestPartition := func() string {
+		largestPartition := ""
+		for partition, tree := range partitions {
+			if largestPartition == "" || tree.Len() > partitions[largestPartition].Len() {
+				largestPartition = partition
+			}
+		}
+		return largestPartition
+	}
+
+	findOldestPartition := func() string {
+		oldestTs := time.Now() //at least one partition must be older than now, right?
+		oldestPartition := ""
+		for partition, tree := range partitions {
+			if tree.lastUpdate.Before(oldestTs) {
+				oldestPartition = partition
+			}
+		}
+		return oldestPartition
+	}
+
+	loadRecord := func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if lastErr != nil {
+			return
+		}
+
+		nextVal, err := ri()
+		if err != nil {
+			lastErr = err
+			return
+		}
+
+		maybePartition := keyvaluelist.MaybePartitions(nextVal)
+		if tree, ok := partitions[maybePartition]; !ok {
+			tree = NewBtreeSyncedLesser(2)
+			partitions[maybePartition] = tree
+			//fmt.Printf("Inserting records into new partition %s\n", maybePartition)
+			tree.ReplaceOrInsertLesser(nextVal)
+			inSortQueue++
+		} else {
+			//fmt.Printf("Inserting records into old partition %s\n", maybePartition)
+			tree.ReplaceOrInsertLesser(nextVal)
+			inSortQueue++
+		}
+	}
+
+	// Load cache assync
+	cacheIsFull := make(chan struct{})
+	go func() {
+		for ; lastErr == nil; loadRecord() {
+			if inSortQueue >= bufferSize {
+				cacheIsFull <- struct{}{}
+			}
+		}
+		//fmt.Printf("Closing cacheIsFull after err %v", lastErr)
+		close(cacheIsFull)
+	}()
+
+	activePhase := 1
+	getPartitionPicker := func() string {
+		if activePhase == 1 {
+			activePhase = 2
+			return findLargestPartition()
+		}
+		activePhase = 1
+		return findOldestPartition()
+	}
+
+	var activePartition string
+	var partitionIterator func() (Lesser, error)
+	partitionIterator = func() (Lesser, error) {
+		for {
+			mu.Lock()
+
+			if activePartition == "" {
+				activePartition = getPartitionPicker()
+			}
+			if activePartition == "" || inSortQueue <= 0 {
+				mu.Unlock()
+				return nil, ErrIteratorStop // Cache can not be full/closed and not get a partition back.
+			}
+
+			if tree, ok := partitions[activePartition]; !ok {
+				panic("i shouldn't be here...")
+			} else {
+				rec := tree.DeleteMinLesser()
+				if rec != nil {
+					inSortQueue--
+					mu.Unlock()
+					return rec, nil
+				}
+				activePartition = ""
+				delete(partitions, activePartition)
+				mu.Unlock()
+				continue
+			}
+		}
+	}
+
+	return func() (Lesser, error) {
+		<-cacheIsFull
+		return partitionIterator()
+	}
 }
