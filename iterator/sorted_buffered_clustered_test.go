@@ -9,7 +9,11 @@ import (
 	"github.com/kvanticoss/goutils/iterator"
 	"github.com/kvanticoss/goutils/iterator/test_utils"
 	"github.com/kvanticoss/goutils/keyvaluelist"
+
+	"github.com/stretchr/testify/assert"
 )
+
+type partitionStats map[string]map[int]int
 
 func mapKeys(tmp map[string]bool) []string {
 	keys := make([]string, 0)
@@ -19,68 +23,102 @@ func mapKeys(tmp map[string]bool) []string {
 	return keys
 }
 
+func (stats partitionStats) countRecords() (int, int, map[int]int) {
+	sum := 0
+	max := 0
+	clusterCount := map[int]int{}
+	for _, v1 := range stats {
+		for k, v := range v1 {
+			sum = sum + v
+			clusterCount[k] = clusterCount[k] + v
+		}
+	}
+
+	return sum, max, clusterCount
+}
+
+func (stats partitionStats) print(writersCreated int, details bool) {
+	sum, max, clusterCount := stats.countRecords()
+	fmt.Printf("Sorted %d records into %d unique partitions(ids*day*hours) requiring %d files (%.2f files / partition; %.2f records / file)\n",
+		sum,
+		len(stats),
+		writersCreated,
+		float64(writersCreated)/float64(len(stats)),
+		float64(sum)/float64(writersCreated),
+	)
+
+	if !details {
+		return
+	}
+
+	// Sort mapkeys in order
+	keys := make([]int, 0)
+	for k := range clusterCount {
+		if clusterCount[k] > max {
+			max = clusterCount[k]
+		}
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	for k := range keys {
+		v := clusterCount[k]
+		fmt.Printf("%d: %0"+fmt.Sprintf("%d", 100*v/sum)+"d (%.2f %%) [%d]\n", k, 0, 100*float64(v)/float64(sum), v)
+	}
+}
+
 func TestClusterdBuffers(t *testing.T) {
 
-	stats := map[string]map[int]int{}
-
-	writers := map[string]bool{}
-	writersCreated := 0
-
-	printStats := func() {
-		tmp := map[int]int{}
-		max := 0
-		sum := 0
-		for _, v1 := range stats {
-			for k, v := range v1 {
-				sum = sum + v
-				tmp[k] = tmp[k] + v
-			}
-		}
-
-		keys := make([]int, 0)
-		for k := range tmp {
-			if tmp[k] > max {
-				max = tmp[k]
-			}
-			keys = append(keys, k)
-		}
-		sort.Ints(keys)
-
-		fmt.Printf("Found %d records and %d partitions requireing %d writers\n", sum, len(stats), writersCreated)
-		for k := range keys {
-			v := tmp[k]
-			fmt.Printf("%d: %0"+fmt.Sprintf("%d", 100*v/sum)+"d (%.2f %%) [%d]\n", k, 0, 100*float64(v)/float64(sum), v)
-		}
+	tests := []struct {
+		ids        float64
+		days       float64
+		records    int
+		sortBuffer int
+		maxWriters int
+	}{
+		{1, 1, 10000, 1000, 250},
+		{1, 1, 100000, 20000, 250},
+		{1, 1, 500000, 20000, 250},
+		{30, 2, 10000, 1000, 250},
+		{30, 2, 100000, 40000, 250},
+		{30, 2, 500000, 40000, 250},
 	}
 
-	maxWriters := 250
-	it := iterator.NewBufferedClusterIteartor(test_utils.DummyIterator(20, 2, 500000), 125000)
+	for _, test := range tests {
+		var cluster int
+		var r interface{}
+		var err error
 
-	var cluster int
-	var r interface{}
-	var err error
-	count := 0
-	for cluster, r, err = it(); err == nil; cluster, r, err = it() {
-		partition := keyvaluelist.MaybePartitions(r)
-		count++
-		if _, ok := stats[partition]; ok {
+		it := iterator.NewBufferedClusterIteartor(test_utils.DummyIterator(test.ids, test.days, test.records), test.sortBuffer)
+
+		stats := partitionStats{}
+		writers := map[string]bool{}
+		writersCreated := 0
+		count := 0
+
+		for cluster, r, err = it(); err == nil; cluster, r, err = it() {
+			count++
+			partition := keyvaluelist.MaybePartitions(r)
+			if _, ok := stats[partition]; !ok {
+				stats[partition] = map[int]int{}
+			}
+
 			stats[partition][cluster] = stats[partition][cluster] + 1
-		} else {
-			stats[partition] = map[int]int{}
-			stats[partition][cluster] = 1
-		}
-		if _, ok := writers[fmt.Sprintf("%s/%d", partition, cluster)]; !ok {
-			writers[fmt.Sprintf("%s/%d", partition, cluster)] = true
-			writersCreated++
-		}
 
-		if len(writers) > maxWriters {
-			keys := mapKeys(writers)
-			delete(writers, keys[rand.Int31n(int32(len(writers))-1)])
+			if _, ok := writers[fmt.Sprintf("%s/%d", partition, cluster)]; !ok {
+				writers[fmt.Sprintf("%s/%d", partition, cluster)] = true
+				writersCreated++
+			}
+
+			// Simluate that writers are beong closed.
+			if len(writers) > test.maxWriters {
+				keys := mapKeys(writers)
+				delete(writers, keys[rand.Int31n(int32(len(writers))-1)])
+			}
 		}
+		assert.Equal(t, count, test.records)
+		assert.EqualError(t, iterator.ErrIteratorStop, err.Error())
+
+		stats.print(writersCreated, true)
 	}
-	t.Logf("Error was %v", err)
-
-	printStats()
-
 }

@@ -1,4 +1,4 @@
-package multiwriter
+package writercache
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kvanticoss/goutils/eioutil"
+	"github.com/kvanticoss/goutils/writerfactory"
 
 	multierror "github.com/hashicorp/go-multierror"
 )
@@ -20,7 +21,7 @@ type Cache struct {
 	ctx             context.Context
 	cxtCancel       func()
 	mutex           *sync.RWMutex
-	writerFactory   WriterFactory
+	writerFactory   writerfactory.WriterFactory
 	writers         map[string]*timedWriter
 	ttl             time.Duration
 	writersCreated  int
@@ -50,8 +51,8 @@ func (tw *timedWriter) getTs() time.Time {
 	return tw.lastAccess
 }
 
-// NewCache will dynamically open writers for writing and close them on inactivity
-func NewCache(ctx context.Context, writerFactory WriterFactory, ttl time.Duration, maxCacheEntires int) *Cache {
+// NewCache will dynamically open writers for writing and close them on inactivity or when maxCacheEntires has been populated into the cache, at which point the oldest item will be closed.
+func NewCache(ctx context.Context, writerFactory writerfactory.WriterFactory, ttl time.Duration, maxCacheEntires int) *Cache {
 	ctx, cancel := context.WithCancel(ctx)
 	c := &Cache{
 		ctx:             ctx,
@@ -112,7 +113,6 @@ func (mfw *Cache) pruneCache() {
 		if tw2.getTs().Before(lastUpdated) {
 			lastUpdated = tw2.getTs()
 			path = p
-			//log.Printf("Found older writer @ %s => %s", path, lastUpdated)
 		}
 	}
 	mfw.mutex.Unlock()
@@ -162,8 +162,8 @@ func (mfw *Cache) RequiresNewWriter(path string) bool {
 
 // FreeWriterbuffers checks how many more writers can be opened within the current limit
 func (mfw *Cache) FreeWriterbuffers() int {
-	if mfw.maxCacheEntires < 0 {
-		return 100
+	if mfw.maxCacheEntires <= 0 {
+		return 1
 	}
 
 	mfw.mutex.Lock()
@@ -218,6 +218,11 @@ func (mfw *Cache) getWriter(path string) (*timedWriter, error) {
 	mfw.writersCreated++
 
 	return writer, nil
+}
+
+// GetWriter returns a synced write closer. The method is a WriterFactory
+func (mfw *Cache) GetWriter(path string) (eioutil.WriteCloser, error) {
+	return mfw.getWriter(path)
 }
 
 // Write gets an existing writers for the path or creates one and saves it for later re-use. If the path contains {suffix}

@@ -11,7 +11,7 @@ type KeyValues []KeyValue
 func NewKeyValuesFromPath(path string) KeyValues {
 	res := KeyValues{}
 	for _, part := range strings.Split(path, "/") {
-		if kv, err := FromHadoopPartition(part); err != nil {
+		if kv, err := FromHadoopPartition(part); err == nil {
 			res = append(res, kv)
 		}
 	}

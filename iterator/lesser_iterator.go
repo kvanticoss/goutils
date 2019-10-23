@@ -1,17 +1,5 @@
 package iterator
 
-import (
-	"errors"
-)
-
-var (
-	// ErrIteratorStop is returned by RecordIterators where there are not more records to be found.
-	ErrIteratorStop = errors.New("iterator stop")
-
-	// ErrNotLesser is returned if records yeilded from a recorditerator can't be changed to Lessers
-	ErrNotLesser = errors.New("record does not implement the Lesser interface and can't be sorted")
-)
-
 // Lesser is implemented by type which can be compared to each other and should answer
 // i'm I/this/self less than the other record (argument 1)
 type Lesser interface {
@@ -29,7 +17,7 @@ type LesserIterator func() (Lesser, error)
 // LesserIteratorClustered iterators is the function interface
 type LesserIteratorClustered func() (int, Lesser, error)
 
-func (it RecordIterator) toLesserIterator() LesserIterator {
+func (it RecordIterator) ToLesserIterator() LesserIterator {
 	return func() (Lesser, error) {
 		record, err := it()
 		if err != nil {
@@ -42,7 +30,13 @@ func (it RecordIterator) toLesserIterator() LesserIterator {
 	}
 }
 
-func (it LesserIteratorClustered) toLesserIterator() LesserIterator {
+func (it LesserIterator) ToRecordIterator() RecordIterator {
+	return func() (interface{}, error) {
+		return it()
+	}
+}
+
+func (it LesserIteratorClustered) ToLesserIterator() LesserIterator {
 	return func() (Lesser, error) {
 		_, record, err := it()
 		if err != nil {

@@ -27,6 +27,34 @@ func TestKeyValueToPartition(t *testing.T) {
 	}.ToPartitionKey())
 }
 
+func TestNewKeyValuesFromPath(t *testing.T) {
+	// Handle simple 1 case value
+	assert.Equal(t,
+		keyvals.KeyValues{
+			keyvals.KeyValue{Key: "test1", Value: "value1"},
+		},
+		keyvals.NewKeyValuesFromPath("test1=value1"))
+
+	// Handle 2 values
+	assert.Equal(t,
+		keyvals.KeyValues{
+			keyvals.KeyValue{Key: "test1", Value: "value1"},
+			keyvals.KeyValue{Key: "test2", Value: "value2"},
+		},
+		keyvals.NewKeyValuesFromPath("test1=value1/test2=value2"))
+
+	// Encode exotic chars
+	assert.Equal(t,
+		keyvals.KeyValues{
+			keyvals.KeyValue{Key: "test1", Value: "value1"},
+			keyvals.KeyValue{Key: "test2", Value: "value2"},
+			keyvals.KeyValue{Key: "test3", Value: "åäöl/~#\"!#=)(/&%¤#)\\"},
+		},
+		keyvals.NewKeyValuesFromPath(
+			"test1=value1/test2=value2/test3=%C3%A5%C3%A4%C3%B6l%2F~%23%22%21%23%3D%29%28%2F%26%25%C2%A4%23%29%5C",
+		))
+}
+
 func TestKeyValueToPrefixFilter(t *testing.T) {
 	// Handle 2 values
 	tests := []struct {
