@@ -2,13 +2,9 @@ package keepalive
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 )
-
-// ErrAlreadyClosed is returned when any operation id done after the TTL has expired
-var ErrAlreadyClosed = errors.New("writer is closed")
 
 // KeepAlive allows users to implement keep alive patterns where after a certain amount of inactivty callbacks are triggerd
 type KeepAlive struct {
@@ -27,7 +23,7 @@ type KeepAlive struct {
 // withouth KeepAlive.Ping() being called.
 // callbacks will not be invoked on ctx.Done unless callbackOnCtxDone == true
 // Please note that due to how golang manages channels, there is a risk that Ping can be called and directly after each of
-// the callbacks are invoked (even though the maxIdle hasn't been reached since the last ping).
+// the callbacks are invoked (even though the maxIdle hasn't been reached since the last ping). This is NOT a high resolution tool
 func New(ctx context.Context, maxIdle time.Duration, callbackOnCtxDone bool, callbacks ...func()) *KeepAlive {
 	ctx, cancel := context.WithCancel(ctx)
 	res := &KeepAlive{
@@ -92,6 +88,7 @@ func (ka *KeepAlive) LastPing() time.Time {
 	return ka.lastPing
 }
 
+// Done checks if the idle timeout has been reach or manually stopped
 func (ka *KeepAlive) Done() (res bool) {
 	ka.mutex.RLock()
 	res = ka.done
@@ -104,11 +101,11 @@ func (ka *KeepAlive) TimeRemainging() time.Duration {
 	return ka.maxIdle - time.Now().Sub(ka.lastPing)
 }
 
-// Ping dones the idle timer to zero; non blocking
+// Ping resets the idle timer to zero; non blocking
 func (ka *KeepAlive) Ping() {
 	now := time.Now()
 
-	// Locks are costly; we can redue the cost by only locking if sufficient time has passed since the last timer reset
+	// Locks are costly; we can redue the cost by only Read-locking if sufficient time has passed since the last timer reset
 	ka.mutex.RLock()
 	timeCopy := ka.lastPing
 	ka.mutex.RUnlock()

@@ -14,19 +14,12 @@ func TestPipeRecordIteratorPerservesAllRecords(t *testing.T) {
 
 	go func() {
 		writer(&SortableStruct{1})
-		t.Log("Wrote record1")
 		writer(&SortableStruct{2})
-		t.Log("Wrote record2")
 		writer(&SortableStruct{3})
-		t.Log("Wrote record3")
 		writer(&SortableStruct{4})
-		t.Log("Wrote record4")
 		writer(&SortableStruct{5})
-		t.Log("Wrote record5")
 		writer(&SortableStruct{6})
-		t.Log("Wrote record6")
 		writer(&SortableStruct{7})
-		t.Log("Wrote record7")
 		writer(nil) // Writing nill closes the writer
 
 		assert.Equal(t, iterator.ErrIteratorStop, writer(nil), "Expected error on closed writer")

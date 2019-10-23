@@ -1,4 +1,4 @@
-package multiwriter_test
+package writercache_test
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kvanticoss/goutils/eioutil"
-	"github.com/kvanticoss/goutils/multiwriter"
+	"github.com/kvanticoss/goutils/writercache"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +22,7 @@ func TestMultiFileStreamingWithNoTimeout(t *testing.T) {
 		return eioutil.NewWriteNOPCloser(db[path]), nil
 	}
 
-	c := multiwriter.NewCache(ctx, wf, time.Second*10, 10)
+	c := writercache.NewCache(ctx, wf, time.Second*10, 10)
 
 	tests := []struct {
 		name          string
@@ -99,7 +99,7 @@ func TestMultiFileStreamingWithTimeout(t *testing.T) {
 
 	ttl := time.Millisecond * 10
 
-	c := multiwriter.NewCache(ctx, wf, ttl, 10)
+	c := writercache.NewCache(ctx, wf, ttl, 10)
 
 	tests := []struct {
 		name string

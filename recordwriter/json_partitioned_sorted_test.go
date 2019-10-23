@@ -1,4 +1,4 @@
-package multiwriter_test
+package recordwriter_test
 
 import (
 	"bytes"
@@ -11,7 +11,8 @@ import (
 
 	"github.com/kvanticoss/goutils/eioutil"
 	"github.com/kvanticoss/goutils/keyvaluelist"
-	"github.com/kvanticoss/goutils/multiwriter"
+	"github.com/kvanticoss/goutils/recordwriter"
+	"github.com/kvanticoss/goutils/writercache"
 
 	"github.com/kvanticoss/goutils/iterator"
 	"github.com/kvanticoss/goutils/iterator/test_utils"
@@ -49,15 +50,11 @@ func assertIsSorted(t *testing.T, b []byte) bool {
 }
 
 func TestMultiJSONStreamingWithNoTimeout(t *testing.T) {
-	ctx := context.Background()
-
 	db := map[string]*bytes.Buffer{}
 	wf := func(path string) (wc eioutil.WriteCloser, err error) {
 		db[path] = &bytes.Buffer{}
 		return eioutil.NewWriteNOPCloser(db[path]), nil
 	}
-
-	c := multiwriter.NewCache(ctx, wf, time.Second*10, 10)
 
 	tests := []struct {
 		name               string
@@ -79,7 +76,7 @@ func TestMultiJSONStreamingWithNoTimeout(t *testing.T) {
 			buffersize: 10,
 		}, {
 			name:       "Test with bigger iterator",
-			values:     10000,
+			values:     1000,
 			buffersize: 10,
 		},
 	}
@@ -102,7 +99,7 @@ func TestMultiJSONStreamingWithNoTimeout(t *testing.T) {
 				test.buffersize, // Number to cache in ram before writing
 			)
 
-			assert.EqualError(t, multiwriter.StreamJSONBySortedPartitions(it, c, multiwriter.DefaultPathbuilder), "iterator stop")
+			assert.EqualError(t, recordwriter.NewLineJSONPartitionedClustered(it, wf, recordwriter.DefaultPathbuilder), "iterator stop")
 			partitionsContent := []byte{}
 			for key, val := range db {
 				//t.Log("Checking partition:" + key)
@@ -138,7 +135,7 @@ func BenchmarkJsonWriter(b *testing.B) {
 	bufferSize := 2000
 	maxConcurrentPartions := bufferSize / 5
 	scale := 10
-	c := multiwriter.NewCache(ctx, wf, time.Second*10, maxConcurrentPartions) // 1% of buffers will be allowed to be opened as files.
+	c := writercache.NewCache(ctx, wf, time.Second*10, maxConcurrentPartions) // 1% of buffers will be allowed to be opened as files.
 
 	for n := 0; n < b.N; n++ {
 		b.StopTimer()
@@ -148,7 +145,7 @@ func BenchmarkJsonWriter(b *testing.B) {
 		)
 		pre := time.Now()
 		b.StartTimer()
-		multiwriter.StreamJSONBySortedPartitions(it, c, multiwriter.DefaultPathbuilder)
+		recordwriter.NewLineJSONPartitionedClustered(it, c.GetWriter, recordwriter.DefaultPathbuilder)
 
 		b.Logf(
 			"Exported and sorted %d records with 1%% sorting capacity over %v (%f records / second) using %d distination buckets (allowing for max %d concurrent Partitions)",

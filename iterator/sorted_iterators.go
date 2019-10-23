@@ -1,6 +1,6 @@
 package iterator
 
-// SortedRecordIterators combines a list of iterators; always yeilding the lowest value
+// SortedRecordIterators combines a list of iterators; always yeilding the lowest value (if the records are of type Lesser)
 // available from all iterators. To do this it keeps a local "peak cache" of the next
 // value for each iterator. This means that iterators that produces data from volatile
 // sources (e.g time) might be experience unexpected results.
@@ -9,7 +9,7 @@ func SortedRecordIterators(iterators []RecordIterator) (RecordIterator, error) {
 	LesserIterators := make([]LesserIterator, len(iterators))
 	nextCandidates := make([]Lesser, len(iterators))
 	for i, ri := range iterators {
-		LesserIterators[i] = ri.toLesserIterator()
+		LesserIterators[i] = ri.ToLesserIterator()
 		nextCandidates[i], err = LesserIterators[i]()
 		if err != nil && err != ErrIteratorStop { // Stops are not errors
 			return nil, err
@@ -56,11 +56,14 @@ func SortedRecordIterators(iterators []RecordIterator) (RecordIterator, error) {
 	}, nil
 }
 
-func SortedLesserIterators(iterators []LesserIterator) (LesserIterator, error) {
+// SortedLesserIterators combines a list of iterators; always yeilding the lowest value
+// available from all iterators. To do this it keeps a local "peak cache" of the next
+// value for each iterator. This means that iterators that produces data from volatile
+// sources (e.g time) might be experience unexpected results.
+func SortedLesserIterators(LesserIterators []LesserIterator) (LesserIterator, error) {
 	var err error
-	LesserIterators := make([]LesserIterator, len(iterators))
-	nextCandidates := make([]Lesser, len(iterators))
-	for i, ri := range iterators {
+	nextCandidates := make([]Lesser, len(LesserIterators))
+	for i, ri := range LesserIterators {
 		nextCandidates[i], err = ri()
 		if err != nil && err != ErrIteratorStop { // Stops are not errors
 			return nil, err

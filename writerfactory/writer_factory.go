@@ -1,4 +1,4 @@
-package multiwriter
+package writerfactory
 
 import "github.com/kvanticoss/goutils/eioutil"
 

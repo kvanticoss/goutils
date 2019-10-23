@@ -1,4 +1,4 @@
-package multiwriter
+package writercache
 
 import "errors"
 
