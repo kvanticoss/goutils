@@ -14,7 +14,7 @@ type SortableStruct struct {
 	partitions keyvaluelist.KeyValues
 }
 
-func (s *SortableStruct) GetPartions() (keyvaluelist.KeyValues, error) {
+func (s *SortableStruct) GetPartitions() (keyvaluelist.KeyValues, error) {
 	return s.partitions, nil
 }
 
