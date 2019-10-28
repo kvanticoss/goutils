@@ -15,8 +15,8 @@ type dummy struct {
 	EventTime time.Time
 }
 
-// GetPartions allows data to be partitioned before saving to GCS
-func (v dummy) GetPartions() (keyvaluelist.KeyValues, error) {
+// GetPartitions allows data to be partitioned before saving to GCS
+func (v dummy) GetPartitions() (keyvaluelist.KeyValues, error) {
 	return keyvaluelist.KeyValues{
 		{Key: "id", Value: v.ID},
 		{Key: "date", Value: v.EventTime.UTC().Format("2006-01-02")},

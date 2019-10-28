@@ -45,7 +45,7 @@ func NewLineJSONPartitionedClustered(
 	return err
 }
 
-// DefaultPathbuilder builds a path from the GetPartions + an incremntal partition id.
+// DefaultPathbuilder builds a path from the GetPartitions + an incremntal partition id.
 func DefaultPathbuilder(record interface{}, partition int) string {
 	return keyvaluelist.MaybePartitions(record) + fmt.Sprintf("sorted_records_p%04d_s{suffix}.json", partition)
 }
