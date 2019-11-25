@@ -1,0 +1,100 @@
+package recordbuffer
+
+import (
+	"github.com/kvanticoss/goutils/iterator"
+)
+
+// SortedRecordBuffers creates a simple LSM like buffer for records and uses the ReadWriteResetterFactory
+// for byte storage of the records
+type SortedRecordBuffers struct {
+	partitions []*recordBuffer
+	factory    ReadWriteResetterFactory
+	newer      func() iterator.Lesser
+
+	recordWriters []func(interface{}) error
+	clusters      []iterator.Lesser
+}
+
+// NewSortedRecordBuffers creates a new SortedRecordBuffer using the underlying ReadWriteResetterFactory
+func NewSortedRecordBuffers(factory ReadWriteResetterFactory, newer func() iterator.Lesser) *SortedRecordBuffers {
+	return &SortedRecordBuffers{
+		partitions: []*recordBuffer{},
+		factory:    factory,
+		newer:      newer,
+	}
+}
+
+// LoadFromRecordIterator populates the buffer through a record iterator.
+func (srb *SortedRecordBuffers) LoadFromRecordIterator(it iterator.RecordIterator) error {
+	// Read all the records in "this folder" into the cache
+	var rec interface{}
+	var err error
+	for rec, err = it(); err == nil; rec, err = it() {
+		// Ensured to be lesser due since it is produced by newer
+		if err := srb.AddRecord(rec); err != nil {
+			return err
+		}
+	}
+	if err == iterator.ErrIteratorStop {
+		return nil
+	}
+	return err
+}
+
+// LoadFromLesserIterator will add a single record to the buffer
+func (srb *SortedRecordBuffers) LoadFromLesserIterator(it iterator.LesserIterator) error {
+	// Read all the records in "this folder" into the cache
+	var rec iterator.Lesser
+	var err error
+	for rec, err = it(); err == nil; rec, err = it() {
+		// Ensured to be lesser due since it is produced by newer
+		if err := srb.AddRecord(rec); err != nil {
+			return err
+		}
+	}
+	if err == iterator.ErrIteratorStop {
+		return nil
+	}
+	return err
+}
+
+// AddRecord will add a single record to the buffer
+func (srb *SortedRecordBuffers) AddRecord(record interface{}) error {
+	nextVal, ok := record.(iterator.Lesser)
+	if !ok {
+		return iterator.ErrNotLesser
+	}
+	return srb.AddLesser(nextVal)
+}
+
+// AddLesser will add a single record to the buffer
+func (srb *SortedRecordBuffers) AddLesser(nextVal iterator.Lesser) error {
+	var lastRecordInCluster iterator.Lesser
+	var index int
+	for index, lastRecordInCluster = range srb.clusters {
+		if !nextVal.Less(lastRecordInCluster) {
+			srb.clusters[index] = nextVal
+			return srb.recordWriters[index](lastRecordInCluster)
+		}
+	}
+	// A new cluster index might be needed
+	srb.clusters = append(srb.clusters, nextVal)
+	cache := srb.decoratedCacheFactory()
+	srb.partitions = append(srb.partitions, cache)
+	srb.recordWriters = append(srb.recordWriters, cache.WriteRecord)
+	return cache.WriteRecord(lastRecordInCluster)
+
+}
+
+// GetSortedIterator returns an (sorted) interator for all the records stored in the buffer
+func (srb *SortedRecordBuffers) GetSortedIterator() (iterator.LesserIterator, error) {
+	var sortedIterators []iterator.LesserIterator
+	for _, cache := range srb.partitions {
+		sortedIterators = append(sortedIterators, cache.GetLesserIt(srb.newer))
+	}
+	return iterator.SortedLesserIterators(sortedIterators)
+}
+
+func (srb *SortedRecordBuffers) decoratedCacheFactory() *recordBuffer {
+	return &recordBuffer{srb.factory()}
+}
