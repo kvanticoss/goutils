@@ -2,10 +2,11 @@ package recordwriter
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/kvanticoss/goutils/iterator"
 	"github.com/kvanticoss/goutils/keyvaluelist"
-	"github.com/kvanticoss/goutils/writerfactory"
+	"github.com/kvanticoss/goutils/writercache"
 
 	jsoniter "github.com/json-iterator/go"
 )
@@ -14,7 +15,7 @@ import (
 // and writes them to the cache (and underlying writer) with the cluster-ids which guarrantees sorted order within each cluster
 func NewLineJSONPartitionedClustered(
 	it iterator.LesserIteratorClustered,
-	wf writerfactory.WriterFactory,
+	wf *writercache.Cache,
 	pathBuilder func(record interface{}, partition int) string,
 ) error {
 	var cluster int
@@ -32,12 +33,10 @@ func NewLineJSONPartitionedClustered(
 		}
 
 		path := pathBuilder(record, cluster)
-
-		writer, err := wf(path)
+		writer, err := wf.GetWriter(path)
 		if err != nil {
 			return err
 		}
-
 		if _, err := writer.Write(append(d, jsonRecordDelimiter...)); err != nil {
 			return err
 		}
@@ -47,5 +46,5 @@ func NewLineJSONPartitionedClustered(
 
 // DefaultPathbuilder builds a path from the GetPartitions + an incremntal partition id.
 func DefaultPathbuilder(record interface{}, partition int) string {
-	return keyvaluelist.MaybePartitions(record) + fmt.Sprintf("sorted_records_p%04d_s{suffix}.json", partition)
+	return path.Join(keyvaluelist.MaybePartitions(record), fmt.Sprintf("sorted_records_p%04d_s{suffix}.json", partition))
 }

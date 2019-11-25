@@ -1,6 +1,8 @@
 package recordwriter
 
 import (
+	"path"
+
 	"github.com/kvanticoss/goutils/iterator"
 	"github.com/kvanticoss/goutils/keyvaluelist"
 	"github.com/kvanticoss/goutils/writerfactory"
@@ -23,13 +25,11 @@ func NewLineJSONPartitioned(
 			return err
 		}
 
-		path := keyvaluelist.MaybePartitions(record) + "unsorted_records_s{suffix}.json"
-
+		path := path.Join(keyvaluelist.MaybePartitions(record), "unsorted_records_s{suffix}.json")
 		writer, err := wf(path)
 		if err != nil {
 			return err
 		}
-
 		if _, err := writer.Write(append(d, jsonRecordDelimiter...)); err != nil {
 			return err
 		}
