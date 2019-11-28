@@ -23,13 +23,12 @@ type recordBuffer struct {
 	ReadWriteResetter
 }
 
-func (bl *recordBuffer) WriteRecord(record interface{}) error {
+func (bl *recordBuffer) WriteRecord(record interface{}) (int, error) {
 	d, err := json.Marshal(record)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = bl.ReadWriteResetter.Write(append(d, jsonRecordDelimiter...))
-	return err
+	return bl.ReadWriteResetter.Write(append(d, jsonRecordDelimiter...))
 }
 
 // ReadRecord returns an iterator; not save for concurrent use

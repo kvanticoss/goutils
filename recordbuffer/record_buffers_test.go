@@ -20,11 +20,16 @@ func TestSortedRecordBuffers(t *testing.T) {
 		},
 	)
 
-	assert.NoError(t, buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 200, nil)))
-	assert.NoError(t, buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 1000, nil)))
-	assert.NoError(t, buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 100, nil)))
-	assert.NoError(t, buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 50, nil)))
-	assert.NoError(t, buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 100, nil))) // Dupliacted rec
+	_, err := buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 200, nil))
+	assert.NoError(t, err)
+	_, err = buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 1000, nil))
+	assert.NoError(t, err)
+	_, err = buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 100, nil))
+	assert.NoError(t, err)
+	_, err = buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 50, nil))
+	assert.NoError(t, err)
+	_, err = buffer.LoadFromLesserIterator(test_utils.GetRandomLesserIterator(20000, 100, nil)) // Dupliacted rec
+	assert.NoError(t, err)
 
 	it, err := buffer.GetSortedIterator()
 	assert.NoError(t, err)

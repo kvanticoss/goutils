@@ -11,7 +11,7 @@ type SortedRecordBuffers struct {
 	factory    ReadWriteResetterFactory
 	newer      func() iterator.Lesser
 
-	recordWriters []func(interface{}) error
+	recordWriters []func(interface{}) (int, error)
 	clusters      []iterator.Lesser
 }
 
@@ -25,50 +25,42 @@ func NewSortedRecordBuffers(factory ReadWriteResetterFactory, newer func() itera
 }
 
 // LoadFromRecordIterator populates the buffer through a record iterator.
-func (srb *SortedRecordBuffers) LoadFromRecordIterator(it iterator.RecordIterator) error {
+func (srb *SortedRecordBuffers) LoadFromRecordIterator(it iterator.RecordIterator) (int, error) {
 	// Read all the records in "this folder" into the cache
-	var rec interface{}
-	var err error
-	for rec, err = it(); err == nil; rec, err = it() {
-		// Ensured to be lesser due since it is produced by newer
-		if err := srb.AddRecord(rec); err != nil {
-			return err
-		}
-	}
-	if err == iterator.ErrIteratorStop {
-		return nil
-	}
-	return err
+	return srb.LoadFromLesserIterator(it.ToLesserIterator())
 }
 
 // LoadFromLesserIterator will add a single record to the buffer
-func (srb *SortedRecordBuffers) LoadFromLesserIterator(it iterator.LesserIterator) error {
+func (srb *SortedRecordBuffers) LoadFromLesserIterator(it iterator.LesserIterator) (int, error) {
 	// Read all the records in "this folder" into the cache
 	var rec iterator.Lesser
 	var err error
+	var bytesWritten int
 	for rec, err = it(); err == nil; rec, err = it() {
 		// Ensured to be lesser due since it is produced by newer
-		if err := srb.AddRecord(rec); err != nil {
-			return err
+		if n, err := srb.AddRecord(rec); err != nil {
+			return bytesWritten, err
+		} else {
+			bytesWritten += n
 		}
 	}
 	if err == iterator.ErrIteratorStop {
-		return nil
+		return bytesWritten, nil
 	}
-	return err
+	return bytesWritten, err
 }
 
 // AddRecord will add a single record to the buffer
-func (srb *SortedRecordBuffers) AddRecord(record interface{}) error {
+func (srb *SortedRecordBuffers) AddRecord(record interface{}) (int, error) {
 	nextVal, ok := record.(iterator.Lesser)
 	if !ok {
-		return iterator.ErrNotLesser
+		return 0, iterator.ErrNotLesser
 	}
 	return srb.AddLesser(nextVal)
 }
 
 // AddLesser will add a single record to the buffer
-func (srb *SortedRecordBuffers) AddLesser(nextVal iterator.Lesser) error {
+func (srb *SortedRecordBuffers) AddLesser(nextVal iterator.Lesser) (int, error) {
 	var lastRecordInCluster iterator.Lesser
 	var index int
 	for index, lastRecordInCluster = range srb.clusters {
