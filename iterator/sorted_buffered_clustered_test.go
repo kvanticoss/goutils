@@ -76,12 +76,48 @@ func TestClusterdBuffers(t *testing.T) {
 		sortBuffer int
 		maxWriters int
 	}{
-		{1, 1, 10000, 1000, 250},
-		{1, 1, 100000, 20000, 250},
-		{1, 1, 500000, 20000, 250},
-		{30, 2, 10000, 1000, 250},
-		{30, 2, 100000, 40000, 250},
-		{30, 2, 500000, 40000, 250},
+		{
+			ids:        1,
+			days:       1,
+			records:    10000,
+			sortBuffer: 1000,
+			maxWriters: 250,
+		},
+		{
+			ids:        1,
+			days:       1,
+			records:    100000,
+			sortBuffer: 20000,
+			maxWriters: 250,
+		},
+		{
+			ids:        1,
+			days:       1,
+			records:    500000,
+			sortBuffer: 20000,
+			maxWriters: 250,
+		},
+		{
+			ids:        30,
+			days:       2,
+			records:    10000,
+			sortBuffer: 1000,
+			maxWriters: 250,
+		},
+		{
+			ids:        30,
+			days:       2,
+			records:    100000,
+			sortBuffer: 40000,
+			maxWriters: 250,
+		},
+		{
+			ids:        30,
+			days:       2,
+			records:    500000,
+			sortBuffer: 40000,
+			maxWriters: 250,
+		},
 	}
 
 	for _, test := range tests {

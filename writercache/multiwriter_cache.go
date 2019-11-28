@@ -141,7 +141,6 @@ func (mfw *Cache) Close() error {
 				mfw.mutex.Lock()
 				allErrors = multierror.Append(allErrors, err)
 				mfw.mutex.Unlock()
-
 			}
 			wg.Done()
 		}(path)

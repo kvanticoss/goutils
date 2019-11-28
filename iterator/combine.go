@@ -19,7 +19,8 @@ func CombineIterators(iterators ...RecordIterator) RecordIterator {
 }
 
 // CombineLesserIterators will yeild the results from each of the consisting iterators
-// the error ErrIteratorStop is expected to progress to the next iterator
+// the error ErrIteratorStop is expected to progress to the next iterator. To combine LesserIterators in
+// sorted fashion use SortedLesserIterators()
 func CombineLesserIterators(iterators ...LesserIterator) LesserIterator {
 	var f func() (Lesser, error)
 	f = func() (Lesser, error) {
