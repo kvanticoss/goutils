@@ -11,11 +11,11 @@ import (
 // SortableStruct is a struct which implements the Lesser-interface
 type SortableStruct struct {
 	Val        int
-	partitions keyvaluelist.KeyValues
+	Partitions keyvaluelist.KeyValues
 }
 
 func (s *SortableStruct) GetPartitions() (keyvaluelist.KeyValues, error) {
-	return s.partitions, nil
+	return s.Partitions, nil
 }
 
 // Less answers if "other" is Less (should be sorted before) this struct
@@ -37,7 +37,7 @@ func GetLesserIterator(max int, maybePartitions keyvaluelist.KeyValues) iterator
 		if i <= max {
 			return &SortableStruct{
 				Val:        i,
-				partitions: maybePartitions,
+				Partitions: maybePartitions,
 			}, nil
 		}
 		return nil, iterator.ErrIteratorStop
@@ -52,7 +52,7 @@ func GetReverseLesserIterator(max int, maybePartitions keyvaluelist.KeyValues) i
 		if i >= 0 {
 			return &SortableStruct{
 				Val:        i,
-				partitions: maybePartitions,
+				Partitions: maybePartitions,
 			}, nil
 		}
 		return nil, iterator.ErrIteratorStop
@@ -68,7 +68,7 @@ func GetRandomLesserIterator(maxNum, maxElements int, maybePartitions keyvalueli
 		if i <= maxElements {
 			return &SortableStruct{
 				Val:        rand.Intn(maxNum),
-				partitions: maybePartitions,
+				Partitions: maybePartitions,
 			}, nil
 		}
 		return nil, iterator.ErrIteratorStop

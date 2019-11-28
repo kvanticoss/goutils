@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -49,72 +50,79 @@ func assertIsSorted(t *testing.T, b []byte) bool {
 	return true
 }
 
-func TestMultiJSONStreamingWithNoTimeout(t *testing.T) {
+func valsToTestIt(partitions keyvaluelist.KeyValues, vals ...int) iterator.LesserIteratorClustered {
+	return func() (int, iterator.Lesser, error) {
+		if len(vals) == 0 {
+			return 0, nil, iterator.ErrIteratorStop
+		}
+		res := vals[0]
+		vals = vals[1:]
+		log.Printf("yeilding %d", res)
+		return res, &test_utils.SortableStruct{
+			Val:        res,
+			Partitions: partitions,
+		}, nil
+	}
+}
+
+func TestMultiJSONSClusteredAndPartitioned(t *testing.T) {
 	db := map[string]*bytes.Buffer{}
 	wf := func(path string) (wc eioutil.WriteCloser, err error) {
-		db[path] = &bytes.Buffer{}
+		if _, ok := db[path]; !ok {
+			db[path] = &bytes.Buffer{}
+		}
 		return eioutil.NewWriteNOPCloser(db[path]), nil
 	}
 
 	tests := []struct {
-		name               string
-		values, buffersize int
-		expectations       [][]byte
+		name        string
+		testRecords []int
 	}{
 		{
-			name:       "Ensure sorted with large buffer",
-			values:     101,
-			buffersize: 1000,
-		}, {
-			name:       "Ensure sorted with large same size buffer",
-			values:     101,
-			buffersize: 102,
+			name:        "Simple In order",
+			testRecords: []int{1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5},
 		},
 		{
-			name:       "Ensure sorted with too small buffer",
-			values:     101,
-			buffersize: 10,
-		}, {
-			name:       "Test with bigger iterator",
-			values:     1000,
-			buffersize: 10,
+			name:        "Simple empty iterator",
+			testRecords: []int{},
+		},
+		{
+			name:        "Out of order",
+			testRecords: []int{1, 2, 1, 4, 1, 3, 5, 5, 5, 5, 6, 6, 67, 77, 7, 7},
+		},
+		{
+			name:        "Reverse order",
+			testRecords: []int{9, 8, 7, 6, 5, 4, 3, 2, 1},
 		},
 	}
 
-	t.Parallel()
 	for index, test := range tests {
 		t.Run(t.Name(), func(t *testing.T) {
-
 			partitions := keyvaluelist.KeyValues{{
 				Key:   "testname",
 				Value: fmt.Sprintf("%d", index),
 			}}
 
-			it := iterator.NewBufferedClusterIteartor(
-				test_utils.GetRandomLesserIterator(
-					99999,
-					test.values, //number of items
-					partitions,
-				),
-				test.buffersize, // Number to cache in ram before writing
-			)
+			it := valsToTestIt(partitions, test.testRecords...)
+			assert.EqualError(t, recordwriter.NewLineJSONClustered(it, wf, recordwriter.DefaultClusteredPathbuilder), "iterator stop")
 
-			assert.EqualError(t, recordwriter.NewLineJSONPartitionedClustered(it, wf, recordwriter.DefaultPathbuilder), "iterator stop")
+			// Check total row in the test
 			partitionsContent := []byte{}
 			for key, val := range db {
-				//t.Log("Checking partition:" + key)
-				if !assertIsSorted(t, val.Bytes()) {
-					//t.Logf("Db-state: %v", db)
-				}
 				if strings.HasPrefix(key, partitions.ToPartitionKey()) {
 					partitionsContent = append(partitionsContent, val.Bytes()...)
 				}
 			}
-			/*
-				for _, expected := range test.expectations {
-					assert.Truef(t, bytes.Contains(partitionsContent, expected), "Couldn't find %s in %s", expected, partitionsContent)
-				}
-			*/
+			assert.Len(t, bytes.Split(partitionsContent, []byte("\n")), len(test.testRecords)+1, "Expected all records to be accounted for in %v", string(partitionsContent))
+
+			// Checkt that each record value exists
+			for _, clusterID := range test.testRecords {
+				filePath := recordwriter.DefaultClusteredPathbuilder(&test_utils.SortableStruct{
+					Val:        clusterID,
+					Partitions: partitions,
+				}, clusterID)
+				assert.Truef(t, strings.Contains(db[filePath].String(), fmt.Sprintf(`{"Val":%d`, clusterID)), "Couldn't find %s in %v", filePath, db)
+			}
 		})
 	}
 }
@@ -145,7 +153,8 @@ func BenchmarkJsonWriter(b *testing.B) {
 		)
 		pre := time.Now()
 		b.StartTimer()
-		recordwriter.NewLineJSONPartitionedClustered(it, c.GetWriter, recordwriter.DefaultPathbuilder)
+		assert.NoError(b, recordwriter.NewLineJSONClustered(it, c.GetWriter, recordwriter.DefaultClusteredPathbuilder))
+		assert.NoError(b, c.Close())
 
 		b.Logf(
 			"Exported and sorted %d records with 1%% sorting capacity over %v (%f records / second) using %d distination buckets (allowing for max %d concurrent Partitions)",
