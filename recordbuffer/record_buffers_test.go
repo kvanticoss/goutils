@@ -8,6 +8,7 @@ import (
 	"github.com/kvanticoss/goutils/iterator/test_utils"
 	"github.com/kvanticoss/goutils/recordbuffer"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSortedRecordBuffers(t *testing.T) {
@@ -16,7 +17,7 @@ func TestSortedRecordBuffers(t *testing.T) {
 			return &bytes.Buffer{}
 		},
 		func() iterator.Lesser {
-			return test_utils.NewDummyRecordPtr()
+			return &test_utils.SortableStruct{}
 		},
 	)
 
@@ -32,7 +33,7 @@ func TestSortedRecordBuffers(t *testing.T) {
 	assert.NoError(t, err)
 
 	it, err := buffer.GetSortedIterator()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	count := 0
 	var prevLesser, rec iterator.Lesser

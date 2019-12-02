@@ -1,12 +1,11 @@
 package recordbuffer
 
 import (
-	"encoding/json"
+	"encoding/gob"
+	"io"
 
 	"github.com/kvanticoss/goutils/iterator"
 )
-
-var jsonRecordDelimiter = []byte("\n")
 
 // ReadWriteResetterFactory should return a RecordBuffer. The simplest implementation of this factory is func(_ []byte) *bytes.Buffer {return &bytes.NewBuffer{}}
 // but theoretically (not yet tested) wrapping https://github.com/ShoshinNikita/go-disk-buffer should also do.
@@ -21,36 +20,60 @@ type ReadWriteResetter interface {
 
 type recordBuffer struct {
 	ReadWriteResetter
+
+	bytesWritten int
+	gobEnc       *gob.Encoder
+	gobDec       *gob.Decoder
+}
+
+func (bl *recordBuffer) Write(p []byte) (n int, err error) {
+	n, err = bl.ReadWriteResetter.Write(p)
+	bl.bytesWritten += n
+	return n, err
 }
 
 func (bl *recordBuffer) WriteRecord(record interface{}) (int, error) {
-	d, err := json.Marshal(record)
-	if err != nil {
-		return 0, err
+	if bl.gobEnc == nil {
+		bl.gobEnc = gob.NewEncoder(bl)
 	}
-	return bl.ReadWriteResetter.Write(append(d, jsonRecordDelimiter...))
+
+	if record == nil {
+		panic(record)
+	}
+
+	prevByteCount := bl.bytesWritten
+	err := bl.gobEnc.Encode(record)
+	return bl.bytesWritten - prevByteCount, err
 }
 
 // ReadRecord returns an iterator; not save for concurrent use
 func (bl *recordBuffer) GetRecordIt(new func() interface{}) iterator.RecordIterator {
-	dec := json.NewDecoder(bl)
+	if bl.gobDec == nil {
+		bl.gobDec = gob.NewDecoder(bl)
+	}
+
 	return func() (interface{}, error) {
 		dst := new()
-		if !dec.More() {
+		err := bl.gobDec.Decode(dst)
+		if err == io.EOF {
 			return nil, iterator.ErrIteratorStop
 		}
-		return dst, dec.Decode(dst)
+		return dst, err
 	}
 }
 
 // ReadRecord returns an iterator; not save for concurrent use
 func (bl *recordBuffer) GetLesserIt(new func() iterator.Lesser) iterator.LesserIterator {
-	dec := json.NewDecoder(bl)
+	if bl.gobDec == nil {
+		bl.gobDec = gob.NewDecoder(bl)
+	}
+
 	return func() (iterator.Lesser, error) {
 		dst := new()
-		if !dec.More() {
+		err := bl.gobDec.Decode(dst)
+		if err == io.EOF {
 			return nil, iterator.ErrIteratorStop
 		}
-		return dst, dec.Decode(dst)
+		return dst, err
 	}
 }

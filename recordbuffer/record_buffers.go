@@ -66,7 +66,7 @@ func (srb *SortedRecordBuffers) AddLesser(nextVal iterator.Lesser) (int, error) 
 	for index, lastRecordInCluster = range srb.clusters {
 		if !nextVal.Less(lastRecordInCluster) {
 			srb.clusters[index] = nextVal
-			return srb.recordWriters[index](lastRecordInCluster)
+			return srb.recordWriters[index](nextVal)
 		}
 	}
 	// A new cluster index might be needed
@@ -74,7 +74,7 @@ func (srb *SortedRecordBuffers) AddLesser(nextVal iterator.Lesser) (int, error) 
 	cache := srb.decoratedCacheFactory()
 	srb.partitions = append(srb.partitions, cache)
 	srb.recordWriters = append(srb.recordWriters, cache.WriteRecord)
-	return cache.WriteRecord(lastRecordInCluster)
+	return cache.WriteRecord(nextVal)
 
 }
 
@@ -88,5 +88,7 @@ func (srb *SortedRecordBuffers) GetSortedIterator() (iterator.LesserIterator, er
 }
 
 func (srb *SortedRecordBuffers) decoratedCacheFactory() *recordBuffer {
-	return &recordBuffer{srb.factory()}
+	return &recordBuffer{
+		ReadWriteResetter: srb.factory(),
+	}
 }
