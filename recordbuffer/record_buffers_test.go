@@ -47,3 +47,35 @@ func TestSortedRecordBuffers(t *testing.T) {
 
 	assert.Equal(t, 200+1000+100+50+100, count, "expected all records to be returned")
 }
+
+func TestSortedRecordBuffersNoDeduplication(t *testing.T) {
+	buffer := recordbuffer.NewSortedRecordBuffers(
+		func() recordbuffer.ReadWriteResetter {
+			return &bytes.Buffer{}
+		},
+		func() iterator.Lesser {
+			return &test_utils.SortableStruct{}
+		},
+	)
+
+	record := &test_utils.SortableStruct{
+		Val:        1,
+		Partitions: nil,
+	}
+
+	buffer.AddRecord(record)
+	buffer.AddRecord(record)
+	buffer.AddRecord(record)
+	buffer.AddRecord(record)
+	buffer.AddRecord(record)
+
+	it, err := buffer.GetSortedIterator()
+	require.NoError(t, err)
+
+	count := 0
+	for _, err := it(); err == nil; _, err = it() {
+		count++
+	}
+	assert.Equal(t, 5, count)
+
+}

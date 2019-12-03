@@ -7,10 +7,16 @@ func DeduplicateRecordIterators(it RecordIterator) RecordIterator {
 	var previousRecord interface{}
 	return func() (interface{}, error) {
 		rec, err := it()
-		for err != nil && areEqual(rec, previousRecord) {
+		//log.Printf("%v %v %v %v", rec, err, previousRecord, areEqual(rec, previousRecord))
+
+		for err == nil && areEqual(rec, previousRecord) {
+			previousRecord = rec
 			rec, err = it()
-			previousRecord = rec // Shouldn't be needed as they are "Equal" but if the comparrison is not commutative it is needed
+			//log.Printf("....%v %v %v %v", rec, err, previousRecord, areEqual(rec, previousRecord))
+
 		}
+
+		previousRecord = rec
 		return rec, err
 	}
 }
