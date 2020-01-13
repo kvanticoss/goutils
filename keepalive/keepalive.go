@@ -91,9 +91,8 @@ func (ka *KeepAlive) LastPing() time.Time {
 // Done checks if the idle timeout has been reach or manually stopped
 func (ka *KeepAlive) Done() (res bool) {
 	ka.mutex.RLock()
-	res = ka.done
-	ka.mutex.RUnlock()
-	return res
+	defer ka.mutex.RUnlock()
+	return ka.done
 }
 
 // TimeRemainging returns the duration until the callbacks will be triggerd if no more Ping() are called

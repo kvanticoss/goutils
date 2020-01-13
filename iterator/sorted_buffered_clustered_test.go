@@ -146,7 +146,7 @@ func TestClusterdBuffers(t *testing.T) {
 				writersCreated++
 			}
 
-			// Simluate that writers are beong closed.
+			// Simulate that writers are being closed randomly
 			if len(writers) > test.maxWriters {
 				keys := mapKeys(writers)
 				delete(writers, keys[rand.Int31n(int32(len(writers))-1)])

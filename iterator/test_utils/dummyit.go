@@ -36,6 +36,7 @@ func (v dummy) Less(other interface{}) bool {
 	return v.EventTime.Before(vo.EventTime) || (v.EventTime.Equal(vo.EventTime) && v.ID < vo.ID)
 }
 
+// NewDummyRecordPtr returns a new dummy record
 func NewDummyRecordPtr() *dummy {
 	return &dummy{}
 }
@@ -59,8 +60,11 @@ func DummyIterator(ids float64, days float64, records int) iterator.LesserIterat
 		yeilded++
 
 		return dummy{
-			ID:        fmt.Sprintf("%05d", int(r.NormFloat64()*math.Sqrt(ids)+ids/2)),
-			EventTime: time.Unix(testTime.Add(time.Hour*time.Duration(r.Float64()*24*days)).Unix(), int64(r.Float64()*float64(records)*10000)), //random usec to ensure each record is uniques
+			ID: fmt.Sprintf("%05d", int(r.NormFloat64()*math.Sqrt(ids)+ids/2)),
+			EventTime: time.Unix(
+				testTime.Add(time.Hour*time.Duration(r.Float64()*24*days)).Unix(),
+				int64(r.Float64()*float64(records)*10000), //random usec to ensure each record is unique
+			),
 		}, nil
 	}
 }
