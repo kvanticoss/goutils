@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"testing"
 	"time"
@@ -57,7 +56,7 @@ func valsToTestIt(partitions keyvaluelist.KeyValues, vals ...int) iterator.Lesse
 		}
 		res := vals[0]
 		vals = vals[1:]
-		log.Printf("yeilding %d", res)
+		//log.Printf("yeilding %d", res)
 		return res, &test_utils.SortableStruct{
 			Val:        res,
 			Partitions: partitions,

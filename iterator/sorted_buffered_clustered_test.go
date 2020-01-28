@@ -155,6 +155,6 @@ func TestClusterdBuffers(t *testing.T) {
 		assert.Equal(t, count, test.records)
 		assert.EqualError(t, iterator.ErrIteratorStop, err.Error())
 
-		stats.print(writersCreated, true)
+		//stats.print(writersCreated, true)
 	}
 }

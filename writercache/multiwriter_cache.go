@@ -188,7 +188,6 @@ func (mfw *Cache) ClosePath(path string) error {
 func (mfw *Cache) getWriter(path string) (*timedWriter, error) {
 	// Let's start with a lightweight read lock
 	mfw.mutex.RLock()
-
 	writer, ok := mfw.writers[path]
 	defer writer.updateTs()
 	if ok {
