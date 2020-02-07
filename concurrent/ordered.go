@@ -31,9 +31,9 @@ const (
 )
 
 type StreamOutput struct {
-	index int
-	res   interface{}
-	err   error
+	Index int
+	Res   interface{}
+	Err   error
 }
 
 // NewOrderedProcessor will read from input and run all the processors, in order,
@@ -96,7 +96,7 @@ func newOrderedProcessor(
 					case <-syncers[index%workers]:
 					case <-ctx.Done():
 						outputCh <- StreamOutput{
-							err: ctx.Err(),
+							Err: ctx.Err(),
 						}
 						return
 					}
@@ -120,23 +120,23 @@ func newOrderedProcessor(
 					}
 					var out StreamOutput // Todo, maybe reuse queuedItem
 
-					if queuedItem.err != nil {
+					if queuedItem.Err != nil {
 						out = queuedItem
 					} else {
-						out.res, out.err = ps(ctx, queuedItem.res)
-						out.index = queuedItem.index
+						out.Res, out.Err = ps(ctx, queuedItem.Res)
+						out.Index = queuedItem.Index
 					}
 
-					if out.err == nil {
-						putOnQueueInOrder(queuedItem.index, &out)
+					if out.Err == nil {
+						putOnQueueInOrder(queuedItem.Index, &out)
 					} else {
 						switch errorStrategy {
 						case ErrorsDrop:
-							putOnQueueInOrder(queuedItem.index, nil)
+							putOnQueueInOrder(queuedItem.Index, nil)
 						case ErrorsIgnore:
-							putOnQueueInOrder(queuedItem.index, &out)
+							putOnQueueInOrder(queuedItem.Index, &out)
 						case ErrorsAbort:
-							putOnQueueInOrder(queuedItem.index, &out)
+							putOnQueueInOrder(queuedItem.Index, &out)
 							cancel()
 							return
 						}
@@ -154,7 +154,7 @@ func newOrderedProcessor(
 			if errorFound {
 				continue
 			}
-			if r.err != nil && errorStrategy != ErrorsIgnore {
+			if r.Err != nil && errorStrategy != ErrorsIgnore {
 				errorFound = true
 			}
 			outputChCleared <- r
@@ -204,9 +204,9 @@ func interfaceChanToStreamOutputChan(input chan interface{}) chan StreamOutput {
 		index := 0
 		for i := range input {
 			inputChanWithIndex <- StreamOutput{
-				index: index,
-				res:   i,
-				err:   nil,
+				Index: index,
+				Res:   i,
+				Err:   nil,
 			}
 			index++
 		}

@@ -49,10 +49,10 @@ func TestNewOrderedProcessor(t *testing.T) {
 		i: -1,
 	}
 	for r := range out {
-		tr := r.res.(testRecord)
-		assert.Nil(t, r.err)
+		tr := r.Res.(testRecord)
+		assert.Nil(t, r.Err)
 		assert.Greater(t, tr.i, prev.i)
-		assert.Equal(t, tr.parse1Res, fmt.Sprintf("01 - %d", r.index))
+		assert.Equal(t, tr.parse1Res, fmt.Sprintf("01 - %d", r.Index))
 		assert.Equal(t, tr.parse2Res, "")
 		assert.Equal(t, tr.parse2Res, "")
 		prev = tr
@@ -86,13 +86,13 @@ func TestNewOrderedProcessors(t *testing.T) {
 		i: -1,
 	}
 	for r := range out {
-		tr := r.res.(testRecord)
-		assert.Nil(t, r.err)
+		tr := r.Res.(testRecord)
+		assert.Nil(t, r.Err)
 		assert.Greater(t, tr.i, prev.i)
 
-		assert.Equal(t, tr.i, r.index)
-		assert.Equal(t, tr.parse1Res, fmt.Sprintf("01 - %d", r.index))
-		assert.Equal(t, tr.parse2Res, fmt.Sprintf("02 - %d", r.index))
+		assert.Equal(t, tr.i, r.Index)
+		assert.Equal(t, tr.parse1Res, fmt.Sprintf("01 - %d", r.Index))
+		assert.Equal(t, tr.parse2Res, fmt.Sprintf("02 - %d", r.Index))
 		assert.Equal(t, tr.parse3Res, "")
 		prev = tr
 	}
@@ -128,13 +128,13 @@ func TestNewOrderedProcessorsErrorsDrop(t *testing.T) {
 
 	errorsFound := 0
 	for o := range out {
-		if o.err != nil {
+		if o.Err != nil {
 			errorsFound++
 		}
-		if o.index > 50 {
-			assert.NotNil(t, o.err)
+		if o.Index > 50 {
+			assert.NotNil(t, o.Err)
 		} else {
-			assert.Nil(t, o.err)
+			assert.Nil(t, o.Err)
 		}
 	}
 	assert.Equal(t, 0, errorsFound)
@@ -170,13 +170,13 @@ func TestNewOrderedProcessorsErrorsIgnore(t *testing.T) {
 	recordsFound := 0
 	for o := range out {
 		recordsFound++
-		if o.err != nil {
+		if o.Err != nil {
 			errorsFound++
 		}
-		if o.index != 50 {
-			assert.Nil(t, o.err)
+		if o.Index != 50 {
+			assert.Nil(t, o.Err)
 		} else {
-			assert.NotNil(t, o.err)
+			assert.NotNil(t, o.Err)
 		}
 	}
 	assert.Equal(t, records, recordsFound) // 100 good, 1 bad
@@ -204,8 +204,8 @@ func TestNewOrderedProcessorsCtxCancel(t *testing.T) {
 	cancel()
 	var lastErr error
 	for o := range out {
-		if o.err != nil {
-			lastErr = o.err
+		if o.Err != nil {
+			lastErr = o.Err
 		}
 	}
 	assert.Equal(t, lastErr, ctx.Err())
@@ -241,13 +241,13 @@ func TestNewOrderedProcessorsErrorsAbort(t *testing.T) {
 	recordsFound := 0
 	for o := range out {
 		recordsFound++
-		if o.err != nil {
+		if o.Err != nil {
 			errorsFound++
 		}
-		if o.index != 50 {
-			assert.Nil(t, o.err)
+		if o.Index != 50 {
+			assert.Nil(t, o.Err)
 		} else {
-			assert.NotNil(t, o.err)
+			assert.NotNil(t, o.Err)
 		}
 	}
 	assert.Equal(t, 51, recordsFound) // 50 good, 1 bad
@@ -275,7 +275,7 @@ func ExampleOrderedProcessors() {
 
 	res := []int{}
 	for i := range out {
-		res = append(res, i.res.(int))
+		res = append(res, i.Res.(int))
 	}
 
 	// if this would have been evaluated sequencially the process would have taken
