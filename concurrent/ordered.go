@@ -5,10 +5,10 @@ import (
 	"sync"
 )
 
-// Processor defines a function which takes an input and yeilds an  output + error tuple
+// Processor defines a function which takes an input and yields an  output + error tuple
 type Processor func(ctx context.Context, intput interface{}) (interface{}, error)
 
-// ErrorStrategy contains various methods for respoinding to errors during a concurrent execution
+// ErrorStrategy contains various methods for responding to errors during a concurrent execution
 type ErrorStrategy int
 
 const (
@@ -37,9 +37,9 @@ type StreamOutput struct {
 }
 
 // NewOrderedProcessor will read from input and run all the processors, in order,
-// on top of the input; where possible in parralle with upp to [workers] of parrallel
-// threads and emiit the output in preserved order.
-// Is similar to an concurrent ordered .map() call in other lanugages.
+// on top of the input; where possible in parrallell with upp to [workers] of parrallell
+// threads and emit the output in preserved order.
+// Is similar to an concurrent ordered .map() call in other languages.
 // Designed for unbounded streams of data. The consumer is responsible to read out
 // all items from output + errors chan to not end up with memory leaks
 // Since the implementation makes heavy use of channels it is NOT meant for high throughput
@@ -58,9 +58,9 @@ func NewOrderedProcessor(
 }
 
 // NewOrderedProcessor will read from input and run all the processors, in order,
-// on top of the input; where possible in parralle with upp to [workers] of parrallel
-// threads and emiit the output in preserved order.
-// Is similar to an ordered concurrent .map() call in other lanugages.
+// on top of the input; where possible in parrallell with upp to [workers] of parrallell
+// threads and emit the output in preserved order.
+// Is similar to an ordered concurrent .map() call in other languages.
 // Designed for unbounded streams of data. The consumer is responsible to read out
 // all items from output + errors chan to not end up with memory leaks
 func newOrderedProcessor(
@@ -79,7 +79,7 @@ func newOrderedProcessor(
 	for i := 0; i < workers; i++ {
 		syncers[i] = make(chan bool, 1)
 	}
-	// Place the inital relay token
+	// Place the initial relay token
 	syncers[0] <- true
 
 	outputCh := make(chan StreamOutput)
@@ -179,7 +179,7 @@ func newOrderedProcessor(
 	return outputChCleared
 }
 
-// NewOrderedProcessors works like NewOrderedProcessor but where each processor have thier
+// NewOrderedProcessors works like NewOrderedProcessor but where each processor have their
 // own work queue and thread pools, the next reading from the previous.
 func NewOrderedProcessors(
 	ctx context.Context,
@@ -198,7 +198,7 @@ func NewOrderedProcessors(
 }
 
 func interfaceChanToStreamOutputChan(input chan interface{}) chan StreamOutput {
-	// Decorate our input stream with the orderid they are recieved in
+	// Decorate our input stream with the orderid they are received in
 	inputChanWithIndex := make(chan StreamOutput)
 	go func() {
 		index := 0
