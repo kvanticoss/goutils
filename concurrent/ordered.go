@@ -17,9 +17,6 @@ const (
 	// forwarded to the error chan
 	ErrorsIgnore ErrorStrategy = iota + 1
 
-	// ErrorsAbortAll strategy will abort all processing directly on the first error
-	ErrorsAbortAll
-
 	// ErrorsAbort strategy will abort all processing after all successfull entires
 	// ahead of the error causing entry has been flushed to the chan.
 	ErrorsAbort
@@ -74,43 +71,45 @@ func newOrderedProcessor(
 ) {
 	ctx, cancel := context.WithCancel(ctx)
 
-	// Prepare our syncer pool
-	syncers := map[int]chan bool{}
+	// Prepare our token ring pool for sync
+	tokenRing := map[int]chan bool{}
 	for i := 0; i < workers; i++ {
-		syncers[i] = make(chan bool, 1)
+		tokenRing[i] = make(chan bool, 1)
 	}
 	// Place the initial relay token
-	syncers[0] <- true
+	tokenRing[0] <- true
 
 	outputCh := make(chan StreamOutput)
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go func(workerId int) {
+		go func() {
 			defer wg.Done()
-			for {
 
-				putOnQueueInOrder := func(index int, out *StreamOutput) {
-					select {
-					case <-syncers[index%workers]:
-					case <-ctx.Done():
-						outputCh <- StreamOutput{
-							Err: ctx.Err(),
-						}
-						return
+			putOnQueueInOrder := func(index int, out *StreamOutput) {
+				//Wait for our token
+				select {
+				case <-tokenRing[index%workers]: // maps are safe for concurrent reads
+				case <-ctx.Done():
+					outputCh <- StreamOutput{
+						Err: ctx.Err(),
 					}
-
-					if out != nil {
-						outputCh <- *out
-					}
-
-					select {
-					case syncers[(index+1)%workers] <- true:
-					case <-ctx.Done():
-					}
+					return
 				}
 
+				if out != nil {
+					outputCh <- *out
+				}
+
+				// Hand the token over to next worker
+				select {
+				case tokenRing[(index+1)%workers] <- true:
+				case <-ctx.Done():
+				}
+			}
+
+			for {
 				select {
 				case <-ctx.Done():
 					return
@@ -118,7 +117,7 @@ func newOrderedProcessor(
 					if !ok {
 						return
 					}
-					var out StreamOutput // Todo, maybe reuse queuedItem
+					var out StreamOutput // Todo: maybe reuse queuedItem
 
 					if queuedItem.Err != nil {
 						out = queuedItem
@@ -143,7 +142,7 @@ func newOrderedProcessor(
 					}
 				}
 			}
-		}(i)
+		}()
 	}
 
 	// filter out records that are emitted after first error
@@ -169,8 +168,8 @@ func newOrderedProcessor(
 		close(outputCh)
 
 		for i := 0; i < workers; i++ {
-			close(syncers[i])
-			for _ = range syncers[i] {
+			close(tokenRing[i])
+			for _ = range tokenRing[i] {
 			}
 		}
 		// Todo: Maybe write 1 contextDone error
