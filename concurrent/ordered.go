@@ -28,9 +28,19 @@ const (
 )
 
 type StreamOutput struct {
+	// Index is the index (starting at 0) counting from the source input.
 	Index int
-	Res   interface{}
-	Err   error
+
+	// order is used internally for guarranteeing record order. is not guarranteed to
+	// be the same as Index if there are multiple processors and ErrorsDrop is used.
+	order int
+
+	// Res holds the last return value of the last processor, or the value of the first
+	// processor which returned a non nil error.
+	Res interface{}
+
+	// Error of the first processor which returned an non nil error
+	Err error
 }
 
 // NewOrderedProcessor will read from input and run all the processors, in order,
@@ -71,6 +81,8 @@ func newOrderedProcessor(
 ) {
 	ctx, cancel := context.WithCancel(ctx)
 
+	inputChanWithIndex = resetOrder(inputChanWithIndex)
+
 	// Prepare our token ring pool for sync
 	tokenRing := map[int]chan bool{}
 	for i := 0; i < workers; i++ {
@@ -79,87 +91,64 @@ func newOrderedProcessor(
 	// Place the initial relay token
 	tokenRing[0] <- true
 
-	outputCh := make(chan StreamOutput)
+	outputCh := make(chan StreamOutput, 1)
+	putOnQueueInOrder := func(item StreamOutput) {
+		//Wait for our token
+		select {
+		case <-tokenRing[item.order%workers]: // maps are safe for concurrent reads
+		case <-ctx.Done():
+			outputCh <- StreamOutput{
+				Err: ctx.Err(),
+			}
+			return
+		}
+
+		// Only case when we doesn't return the value is if it is an error and we want to drop it
+		if item.Err == nil || errorStrategy != ErrorsDrop {
+			outputCh <- item
+		}
+
+		// Hand the token over to next worker
+		select {
+		case tokenRing[(item.order+1)%workers] <- true:
+		case <-ctx.Done():
+			select {
+			case outputCh <- StreamOutput{Err: ctx.Err()}:
+			default:
+			}
+		}
+
+		// But it there was an abort strategy, stop everything else.
+		if item.Err != nil && errorStrategy == ErrorsAbort {
+			cancel()
+		}
+	}
 
 	wg := sync.WaitGroup{}
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-
-			putOnQueueInOrder := func(index int, out *StreamOutput) {
-				//Wait for our token
-				select {
-				case <-tokenRing[index%workers]: // maps are safe for concurrent reads
-				case <-ctx.Done():
-					outputCh <- StreamOutput{
-						Err: ctx.Err(),
-					}
-					return
-				}
-
-				if out != nil {
-					outputCh <- *out
-				}
-
-				// Hand the token over to next worker
-				select {
-				case tokenRing[(index+1)%workers] <- true:
-				case <-ctx.Done():
-				}
-			}
-
 			for {
 				select {
 				case <-ctx.Done():
+					select {
+					case outputCh <- StreamOutput{Err: ctx.Err()}:
+					default:
+					}
 					return
 				case queuedItem, ok := <-inputChanWithIndex:
 					if !ok {
 						return
 					}
-					var out StreamOutput // Todo: maybe reuse queuedItem
-
-					if queuedItem.Err != nil {
-						out = queuedItem
-					} else {
-						out.Res, out.Err = ps(ctx, queuedItem.Res)
-						out.Index = queuedItem.Index
+					if queuedItem.Err == nil {
+						queuedItem.Res, queuedItem.Err = ps(ctx, queuedItem.Res)
 					}
-
-					if out.Err == nil {
-						putOnQueueInOrder(queuedItem.Index, &out)
-					} else {
-						switch errorStrategy {
-						case ErrorsDrop:
-							putOnQueueInOrder(queuedItem.Index, nil)
-						case ErrorsIgnore:
-							putOnQueueInOrder(queuedItem.Index, &out)
-						case ErrorsAbort:
-							putOnQueueInOrder(queuedItem.Index, &out)
-							cancel()
-							return
-						}
-					}
+					putOnQueueInOrder(queuedItem)
 				}
 			}
 		}()
 	}
-
-	// filter out records that are emitted after first error
-	outputChCleared := make(chan StreamOutput)
-	go func() {
-		var errorFound bool
-		for r := range outputCh {
-			if errorFound {
-				continue
-			}
-			if r.Err != nil && errorStrategy != ErrorsIgnore {
-				errorFound = true
-			}
-			outputChCleared <- r
-		}
-		close(outputChCleared)
-	}()
 
 	// Cleanup channels
 	go func() {
@@ -172,10 +161,9 @@ func newOrderedProcessor(
 			for _ = range tokenRing[i] {
 			}
 		}
-		// Todo: Maybe write 1 contextDone error
 	}()
 
-	return outputChCleared
+	return maybeRemoveRecAfterFirstError(errorStrategy, outputCh)
 }
 
 // NewOrderedProcessors works like NewOrderedProcessor but where each processor have their
@@ -194,6 +182,43 @@ func NewOrderedProcessors(
 		output = newOrderedProcessor(ctx, workers, output, errorStrategy, p)
 	}
 	return output
+}
+
+func resetOrder(in chan StreamOutput) chan StreamOutput {
+	inputChanWithIndexCleandOrder := make(chan StreamOutput)
+	go func() {
+		order := 0
+		for input := range in {
+			inputChanWithIndexCleandOrder <- StreamOutput{
+				order: order,
+
+				Index: input.Index,
+				Res:   input.Res,
+				Err:   input.Err,
+			}
+			order++
+		}
+		close(inputChanWithIndexCleandOrder)
+	}()
+	return inputChanWithIndexCleandOrder
+}
+
+func maybeRemoveRecAfterFirstError(errorStrategy ErrorStrategy, in chan StreamOutput) chan StreamOutput {
+	outputChCleared := make(chan StreamOutput)
+	go func() {
+		var errorFound bool
+		for r := range in {
+			if errorFound {
+				continue
+			}
+			if r.Err != nil && errorStrategy != ErrorsIgnore {
+				errorFound = true
+			}
+			outputChCleared <- r
+		}
+		close(outputChCleared)
+	}()
+	return outputChCleared
 }
 
 func interfaceChanToStreamOutputChan(input chan interface{}) chan StreamOutput {

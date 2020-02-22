@@ -200,15 +200,15 @@ func TestNewOrderedProcessorsCtxCancel(t *testing.T) {
 			return input, nil
 		},
 	)
-
 	cancel()
+
 	var lastErr error
 	for o := range out {
 		if o.Err != nil {
 			lastErr = o.Err
 		}
 	}
-	assert.Equal(t, lastErr, ctx.Err())
+	assert.Equal(t, ctx.Err(), lastErr)
 }
 
 func TestNewOrderedProcessorsErrorsAbort(t *testing.T) {
@@ -285,6 +285,97 @@ func ExampleOrderedProcessors() {
 	duration := time.Now().Sub(start)
 	fmt.Printf("%v in %s", res, duration.Truncate(10*time.Millisecond))
 	// Output: [0 2 4 6 8 10 12 14 16 18] in 10ms
+}
+
+func TestMultipleProcessors(t *testing.T) {
+	ctx := context.TODO()
+
+	someErr := fmt.Errorf("some error")
+	tests := []struct {
+		name     string
+		strategy ErrorStrategy
+
+		startValues      []int
+		errorAtValue     int
+		errorAtProcessor int
+
+		expectedLastOutputVal int // Assuming res is $starVal + 1 + 2 +3 => $starVal+5
+		expectedLastError     error
+	}{
+		{
+			name:     "test ErrorsAbort",
+			strategy: ErrorsAbort,
+
+			startValues:  []int{10, 20, 30, 40, 50},
+			errorAtValue: 33, // 3rd value, second processor
+
+			expectedLastOutputVal: 30 + 1 + 2,
+			expectedLastError:     someErr,
+		}, {
+			name:     "test ErrorsIgnore",
+			strategy: ErrorsIgnore,
+
+			startValues:  []int{10, 20, 30, 40, 50},
+			errorAtValue: 33, // 3rd value, second processor
+
+			expectedLastOutputVal: 50 + 1 + 2 + 3,
+			expectedLastError:     nil,
+		}, {
+			name:     "test ErrorsDrop",
+			strategy: ErrorsDrop,
+
+			startValues:  []int{10, 20, 30, 40, 50},
+			errorAtValue: 33, // 3rd value, second processor; 36 should not be present
+
+			expectedLastOutputVal: 50 + 1 + 2 + 3, // last value
+			expectedLastError:     nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			inChan := make(chan interface{}, 2)
+			go func() {
+				for _, val := range test.startValues {
+					inChan <- val
+				}
+				close(inChan)
+			}()
+
+			outChan := NewOrderedProcessors(ctx, 5, inChan, test.strategy,
+				func(ctx context.Context, input interface{}) (interface{}, error) {
+					inVal := input.(int) + 1
+					if inVal == test.errorAtValue {
+						return inVal, someErr
+					}
+					return inVal, nil
+				},
+				func(ctx context.Context, input interface{}) (interface{}, error) {
+					inVal := input.(int) + 2
+					if inVal == test.errorAtValue {
+						return inVal, someErr
+					}
+					return inVal, nil
+				},
+				func(ctx context.Context, input interface{}) (interface{}, error) {
+					if input.(int) == test.errorAtValue {
+						panic("A later processor should not get a value after a previous processers retured an error")
+					}
+					return input.(int) + 3, nil
+				},
+			)
+
+			// Find last value
+			var output StreamOutput
+			for resVal := range outChan {
+				output = resVal
+			}
+
+			assert.Equal(t, test.expectedLastOutputVal, output.Res)
+			assert.Equal(t, test.expectedLastError, output.Err)
+		})
+	}
 }
 
 func BenchmarkNewOrderedProcessors(b *testing.B) {
