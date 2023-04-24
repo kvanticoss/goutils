@@ -20,6 +20,16 @@ type RandExpBackoff struct {
 	minBackoff time.Duration
 }
 
+func New() *RandExpBackoff {
+	return (&RandExpBackoff{}).getOrCreateWithDefaults() // Ensure nil cases are graceful
+}
+
+// Attempt returns the current attempt number
+func (bo *RandExpBackoff) Attempt() int {
+	bo = bo.getOrCreateWithDefaults() // Ensure nil cases are graceful
+	return bo.attempt
+}
+
 // WithMinBackoff returns a new RandExpBackoff with the minimum backof time set to minBackoff; this backoff will always be added to the sleep duration
 func (bo *RandExpBackoff) WithMinBackoff(minBackoff time.Duration) *RandExpBackoff {
 	bo = bo.getOrCreateWithDefaults() // Ensure nil cases are graceful
@@ -28,7 +38,7 @@ func (bo *RandExpBackoff) WithMinBackoff(minBackoff time.Duration) *RandExpBacko
 }
 
 // WithStartAttmpt returns a new RandExpBackoff with the attempt number set ot attempt
-func (bo *RandExpBackoff) WithStartAttmpt(attempt int) *RandExpBackoff {
+func (bo *RandExpBackoff) WithStartAttempt(attempt int) *RandExpBackoff {
 	bo = bo.getOrCreateWithDefaults() // Ensure nil cases are graceful
 	bo.attempt = attempt
 	return bo
@@ -66,7 +76,7 @@ func (bo *RandExpBackoff) getBackoffDuration() time.Duration {
 	rSrc := rand.New(rand.NewSource(time.Now().UnixNano()))
 	r := int(rSrc.Float64()*math.Pow(2, float64(bo.attempt+1))*bo.scale) - 1 // Random number in [0, 2^n * scale-1]
 
-	return (time.Second*time.Duration(r) + bo.minBackoff)
+	return (time.Duration(r)*bo.minBackoff + bo.minBackoff)
 }
 
 func (bo *RandExpBackoff) getOrCreateWithDefaults() *RandExpBackoff {
