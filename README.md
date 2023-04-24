@@ -22,6 +22,9 @@ handles null instances of &RandExpBackoff{} using sane defaults.
 
 
 ## concurrent
+
+WIP - DO NOT USE.
+
 ## eioutil
 
 ## fdbtuple
