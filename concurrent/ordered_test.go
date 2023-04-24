@@ -17,7 +17,7 @@ type testRecord struct {
 	parse3Res string
 }
 
-func getGerator(records int) chan interface{} {
+func getGenerator(records int) chan interface{} {
 	input := make(chan interface{})
 	go func() {
 		for i := 0; i < records; i++ {
@@ -37,7 +37,7 @@ func TestNewOrderedProcessor(t *testing.T) {
 	records := 1000
 
 	out := NewOrderedProcessor(
-		ctx, workers, getGerator(records), ErrorsAbort,
+		ctx, workers, getGenerator(records), ErrorsAbort,
 		func(ctx context.Context, input interface{}) (interface{}, error) {
 			r := input.(testRecord)
 			r.parse1Res = fmt.Sprintf("01 - %d", r.i)
@@ -68,7 +68,7 @@ func TestNewOrderedProcessors(t *testing.T) {
 	records := 100
 
 	out := NewOrderedProcessors(
-		ctx, workers, getGerator(records), ErrorsAbort,
+		ctx, workers, getGenerator(records), ErrorsAbort,
 		func(ctx context.Context, input interface{}) (interface{}, error) {
 			r := input.(testRecord)
 			r.parse1Res = fmt.Sprintf("01 - %d", r.i)
@@ -109,7 +109,7 @@ func TestNewOrderedProcessorsErrorsDrop(t *testing.T) {
 	records := 100
 
 	out := NewOrderedProcessors(
-		ctx, workers, getGerator(records),
+		ctx, workers, getGenerator(records),
 		ErrorsDrop,
 		func(ctx context.Context, input interface{}) (interface{}, error) {
 			r := input.(testRecord)
@@ -149,7 +149,7 @@ func TestNewOrderedProcessorsErrorsIgnore(t *testing.T) {
 	records := 100
 
 	out := NewOrderedProcessors(
-		ctx, workers, getGerator(records),
+		ctx, workers, getGenerator(records),
 		ErrorsIgnore,
 		func(ctx context.Context, input interface{}) (interface{}, error) {
 			r := input.(testRecord)
@@ -189,7 +189,7 @@ func TestNewOrderedProcessorsCtxCancel(t *testing.T) {
 	workers := 5
 	records := 10
 	out := NewOrderedProcessors(
-		ctx, workers, getGerator(records),
+		ctx, workers, getGenerator(records),
 		ErrorsIgnore,
 		func(ctx context.Context, input interface{}) (interface{}, error) {
 			select {
@@ -220,7 +220,7 @@ func TestNewOrderedProcessorsErrorsAbort(t *testing.T) {
 	records := 100
 
 	out := NewOrderedProcessors(
-		ctx, workers, getGerator(records),
+		ctx, workers, getGenerator(records),
 		ErrorsAbort,
 		func(ctx context.Context, input interface{}) (interface{}, error) {
 			r := input.(testRecord)
@@ -399,7 +399,7 @@ func BenchmarkNewOrderedProcessors(b *testing.B) {
 				return func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						out := NewOrderedProcessors(
-							ctx, workers, getGerator(records), ErrorsAbort,
+							ctx, workers, getGenerator(records), ErrorsAbort,
 							func(ctx context.Context, input interface{}) (interface{}, error) {
 								time.Sleep(100 * time.Millisecond)
 								return input, nil
