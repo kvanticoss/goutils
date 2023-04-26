@@ -16,13 +16,13 @@ func TestWithGzipWriterFactory(t *testing.T) {
 
 	// Write to the automatic gzipper
 	writer, err := gzipWf(testCase1Path)
-	assert.NoError(t, err, "MemoryWriterFactory should never yeild errors")
+	assert.NoError(t, err, "MemoryWriterFactory should never yield errors")
 	writer.Write(testCase1Content)
 	writer.Close()
 
 	// Create a refrence
 	rawWriter, err := rawWF("rawGzipWritten.gz")
-	assert.NoError(t, err, "MemoryWriterFactory should never yeild errors")
+	assert.NoError(t, err, "MemoryWriterFactory should never yield errors")
 	gzipWriter := gzip.NewWriter(rawWriter)
 	gzipWriter.Write(testCase1Content)
 	gzipWriter.Flush()
