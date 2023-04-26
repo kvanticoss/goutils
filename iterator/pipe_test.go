@@ -14,7 +14,7 @@ type SortableStruct struct {
 
 func TestPipeRecordIteratorPerservesAllRecords(t *testing.T) {
 
-	writer, it := iterator.NewRecordPipe()
+	writer, it := iterator.NewRecordPipe[SortableStruct]()
 
 	go func() {
 		writer(&SortableStruct{1})
@@ -32,7 +32,7 @@ func TestPipeRecordIteratorPerservesAllRecords(t *testing.T) {
 	start := 1
 	rec, err := it()
 	for ; err == nil; rec, err = it() {
-		assert.Equal(t, start, rec.(*SortableStruct).Val)
+		assert.Equal(t, start, rec.Val)
 		start = start + 1
 	}
 	assert.Equal(t, iterator.ErrIteratorStop, err, "Expected iterator stop after 7 times")
@@ -41,7 +41,7 @@ func TestPipeRecordIteratorPerservesAllRecords(t *testing.T) {
 
 func BenchmarkPipeRecordIteratorPerservesAllRecords(b *testing.B) {
 	b.StopTimer()
-	writer, it := iterator.NewRecordPipe()
+	writer, it := iterator.NewRecordPipe[SortableStruct]()
 
 	b.StartTimer()
 	go func() {

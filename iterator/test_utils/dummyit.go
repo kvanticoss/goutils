@@ -48,14 +48,15 @@ func NewDummyRecordPtr() *dummy {
 // DummyIterator(1,2,3)
 // DummyIterator(1,2,4)
 // have a high chance of being completely different.
-func DummyIterator(ids float64, days float64, records int) iterator.RecordIterator {
+func DummyIterator(ids float64, days float64, records int) iterator.RecordIterator[dummy] {
 	yielded := 0
 
 	r := rand.New(rand.NewSource(int64(records)))
 	testTime := time.Date(2000, 1, 1, 1, 1, 1, 0, time.UTC)
-	return func() (interface{}, error) {
+	return func() (dummy, error) {
 		if yielded >= records {
-			return nil, iterator.ErrIteratorStop
+			var empty dummy
+			return empty, iterator.ErrIteratorStop
 		}
 		yielded++
 

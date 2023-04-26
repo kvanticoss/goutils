@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator"
 	"github.com/kvanticoss/goutils/keyvaluelist"
 	"github.com/kvanticoss/goutils/writerfactory"
 

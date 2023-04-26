@@ -10,8 +10,8 @@ import (
 
 // NewLineJSON writes all the records from the records iterator as newline json to the writer.
 // returns the first error from either the record iterator or the json encoding.
-func NewLineJSON(
-	it iterator.RecordIterator,
+func NewLineJSON[T any](
+	it iterator.RecordIterator[T],
 	w io.Writer,
 ) error {
 	var record interface{}
