@@ -106,6 +106,26 @@ call is blocked during the write.
 
 ## keepalive
 
+Setup a liveness check that cancels once if no "ping" has been observed for a given period of time.
+
+```golang
+
+ka := keepalive.New(ctx, time.Second*30, true, func(){
+  log.Printf("30 seconds passed since last ka.Ping(); or ctx.Done()" )
+})
+time.Sleep(time.Second*20)
+ka.Ping()
+time.Sleep(time.Second*20)
+ka.Ping()
+time.Sleep(time.Second*20)
+ka.Ping()
+time.Sleep(time.Second*20)
+ka.Ping()
+
+ka.Close() // terminates the keep alive an calls callbacks.
+
+```
+
 ## keyvaluelist
 
 ## recordbuffer
