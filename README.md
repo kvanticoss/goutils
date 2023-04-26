@@ -100,7 +100,19 @@ call is blocked during the write.
 
 ## fdbtuple
 
+An import of [https://github.com/apple/foundationdb/blob/5047cc98cde5/bindings/go/src/fdb/tuple/tuple.go#L69](foundation db tuple layer for go) but with all c-go dependencies stripped out.
+
+Highly useful for bin-packing data while maintaining a reasonable sort order.
+
+Note: Makes use of `panic()`
+
+https://apple.github.io/foundationdb/data-modeling.html
+
 ## gzip
+
+Works just like std lib gzip for NewWriter(w) & NewReader(r) but where any call to Flush() and Close() is automatically
+propagated to the underlying writer. This means that as a consumer you only need to keep track of 1 writer or 1 reader
+but can still perform proper cleanup.
 
 ## iterator
 
@@ -169,7 +181,7 @@ an ordered key-value set. Useful to build hive-style partition filters (e.g. `/d
 
 ## recordwriter
 
-## writercache
+`func NewLineJSON(iterator.RecordIterator, io.Writer) error` - Stream Writes new line JSON to the writer.
 
 ## writerfactory
 
