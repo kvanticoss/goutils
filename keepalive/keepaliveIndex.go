@@ -19,10 +19,10 @@ func NewIndex() *Index {
 	}
 }
 
-// GetOrCreate will return the KeepAlive object situation at the index or create it using the arguements
+// GetOrCreate will return the KeepAlive object situation at the index or create it using the arguments
 // Due to the async nature of this package it is possible that a KeepAlive object is returned which is already
 // done; as such the user should do ka := index.GetOrCreate(....); ka.Ping(); if ka.Done() { retry... }.
-// This is autoamtically handled by the PingOrCreate method. This is the preferred method.
+// This is automatically handled by the PingOrCreate method. This is the preferred method.
 func (ka *Index) GetOrCreate(ctx context.Context, indexKey string, maxIdle time.Duration, callbackOnCtxDone bool, callbacks ...func()) *KeepAlive {
 	ka.mu.Lock()
 	defer ka.mu.Unlock()
