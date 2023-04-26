@@ -44,3 +44,50 @@ WIP - DO NOT USE.
 ## writercache
 
 ## writerfactory
+
+Abstraction for creating names writers; used to create writes under specific paths.
+
+```golang
+// WriterFactory should yield a new WriteCloser under the given path.
+type WriterFactory func(path string) (wc eioutil.WriteCloser, err error)
+
+
+wf := writerfactory.GetLocalWriterFactory("/tmp/")
+//mapOfBuffers, wf := writerfactory.GetMemoryWriterFactory()
+
+wf = wf.WithPrefix("PREFIX").WithGzip()
+...
+
+writer, err := wf("foo/bar.txt.gz") // creates a path and opens a file @ /tmp/PREFIX/foo/bar.txt.gz
+writer
+if err != nil {
+  return err
+}
+_, err = writer.Write("hello world") // writes to /tmp/PREFIX/foo/bar.txt.gz
+if err != nil {¨
+  return err
+}
+err = writer.Close()
+if err != nil {
+  return err
+}
+
+```
+
+
+# Highly Experimental
+
+## recordbuffer
+
+Store records in any byte stream.
+
+
+## writercache
+
+Keeps tracks of multiple writer factories and closes them based on timeouts or LRU.
+
+## concurrent
+
+WIP/Playground code - DO NOT USE.
+
+Concurrent ordered execution of jobs in one or more steps. Similar to concurrent map in functional languages
