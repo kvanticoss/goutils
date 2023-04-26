@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/iterator/test_utils"
-	"github.com/kvanticoss/goutils/recordbuffer"
+	"github.com/kvanticoss/goutils/internal/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator/test_utils"
+	"github.com/kvanticoss/goutils/internal/recordbuffer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

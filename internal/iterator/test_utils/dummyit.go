@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator"
 	"github.com/kvanticoss/goutils/keyvaluelist"
 )
 

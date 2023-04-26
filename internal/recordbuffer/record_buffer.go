@@ -4,7 +4,8 @@ import (
 	"encoding/gob"
 	"io"
 
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator"
+	pubiterator "github.com/kvanticoss/goutils/iterator"
 )
 
 // ReadWriteResetterFactory should return a RecordBuffer. The simplest implementation of this factory is func(_ []byte) *bytes.Buffer {return &bytes.NewBuffer{}}
@@ -46,8 +47,8 @@ func (bl *recordBuffer) WriteRecord(record interface{}) (int, error) {
 	return bl.bytesWritten - prevByteCount, err
 }
 
-// ReadRecord returns an iterator; not save for concurrent use
-func (bl *recordBuffer) GetRecordIt(new func() interface{}) iterator.RecordIterator {
+// ReadRecord returns an iterator; not safe for concurrent use
+func (bl *recordBuffer) GetRecordIt(new func() interface{}) pubiterator.RecordIterator {
 	if bl.gobDec == nil {
 		bl.gobDec = gob.NewDecoder(bl)
 	}

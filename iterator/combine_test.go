@@ -11,8 +11,8 @@ import (
 
 func TestCombineIteartors(t *testing.T) {
 	numberOfRecords := 10
-	it1 := test_utils.DummyIterator(1, 1, numberOfRecords).ToRecordIterator()
-	it2 := test_utils.DummyIterator(1, 1, numberOfRecords).ToRecordIterator()
+	it1 := test_utils.DummyIterator(1, 1, numberOfRecords)
+	it2 := test_utils.DummyIterator(1, 1, numberOfRecords)
 
 	combined := iterator.CombineIterators(it1, it2)
 

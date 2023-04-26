@@ -1,7 +1,7 @@
 package recordbuffer
 
 import (
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator"
 )
 
 // SortedRecordBuffers creates a simple LSM like buffer for records and uses the ReadWriteResetterFactory
