@@ -360,7 +360,7 @@ func TestMultipleProcessors(t *testing.T) {
 				},
 				func(ctx context.Context, input interface{}) (interface{}, error) {
 					if input.(int) == test.errorAtValue {
-						panic("A later processor should not get a value after a previous processers retured an error")
+						panic("A later processor should not get a value after a previous processors returned an error")
 					}
 					return input.(int) + 3, nil
 				},
