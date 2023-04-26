@@ -104,6 +104,34 @@ call is blocked during the write.
 
 ## iterator
 
+Utilities around iterators
+
+`type RecordIterator func() (interface{}, error)` - base type iterator
+
+`ErrIteratorStop = errors.New("iterator stop")` - error returned after last record has been emitted.
+
+`func CombineIterators(iterators ...RecordIterator) RecordIterator`
+
+
+`func NewRecordPipe() (RecordWriter, RecordIterator)` - Multithreaded iterators using channels under the hood.
+
+
+`func JSONRecordIterator(new func() interface{}, r io.Reader) RecordIterator` - Get an iterator from a reader pointing to an json array or new line delimited json.
+
+
+### Lesser iterators
+
+Some more complex operations can be performed if we can compare two records. Comparing can be done if the records implement the Lesser interface
+
+```
+type Lesser interface {
+	Less(other interface{}) bool
+}
+
+```
+
+
+
 ## keepalive
 
 Setup a liveness check that cancels once if no "ping" has been observed for a given period of time.

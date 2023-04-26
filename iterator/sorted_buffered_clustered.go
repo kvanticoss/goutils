@@ -6,11 +6,11 @@ import (
 
 const maxLeakybuckets = 6
 
-// NewBufferedClusterIteartor works like NewBufferedRecordIteratorBTree but returns the cluster-id the records was returned from
-// with the guarrantee that within each cluster; records are always in sorted order. Good for handling out of order records.
-// NOTE: to give this guarrantee a cache of records must be keep in memory effectively creating an memory leak. The best way
-// to avoid this memory leak to grow is to reset the iterator from time to time. Fututre iterators might include a GC based on inactivity
-func NewBufferedClusterIteartor(ri LesserIterator, bufferSize int) LesserIteratorClustered {
+// NewBufferedClusterIterator works like NewBufferedRecordIteratorBTree but returns the cluster-id the records was returned from
+// with the guarantee that within each cluster; records are always in sorted order. Good for handling out of order records.
+// NOTE: to give this guarantee a cache of records must be keep in memory effectively creating an memory leak. The best way
+// to avoid this memory leak to grow is to reset the iterator from time to time. Future iterators might include a GC based on inactivity
+func NewBufferedClusterIterator(ri LesserIterator, bufferSize int) LesserIteratorClustered {
 	clustersPartitions := map[string][]Lesser{}
 	it := newBufferedClusterIteartor(ri, bufferSize)
 	return func() (int, Lesser, error) {

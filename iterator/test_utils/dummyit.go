@@ -49,15 +49,15 @@ func NewDummyRecordPtr() *dummy {
 // DummyIterator(1,2,4)
 // have a high chance of being completly different.
 func DummyIterator(ids float64, days float64, records int) iterator.LesserIterator {
-	yeilded := 0
+	yielded := 0
 
 	r := rand.New(rand.NewSource(int64(records)))
 	testTime := time.Date(2000, 1, 1, 1, 1, 1, 0, time.UTC)
 	return func() (iterator.Lesser, error) {
-		if yeilded >= records {
+		if yielded >= records {
 			return nil, iterator.ErrIteratorStop
 		}
-		yeilded++
+		yielded++
 
 		return dummy{
 			ID: fmt.Sprintf("%05d", int(r.NormFloat64()*math.Sqrt(ids)+ids/2)),

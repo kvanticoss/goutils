@@ -1,19 +1,16 @@
 package iterator
 
-// DeduplicateRecordIterators works like the unix command uniq where if two records are equal (ussing .Less(other) bool as comparison func)
+// DeduplicateRecordIterators works like the unix command uniq where if two records are equal (using .Less(other) bool as comparison func)
 // only the first are emitted. If not both records implement .Less(interface{})bool DeduplicateRecordIterators is a NOP (with overhead).
-// Nil records are never considred equal
+// Nil records are never considered equal
 func DeduplicateRecordIterators(it RecordIterator) RecordIterator {
 	var previousRecord interface{}
 	return func() (interface{}, error) {
 		rec, err := it()
-		//log.Printf("%v %v %v %v", rec, err, previousRecord, areEqual(rec, previousRecord))
-
+		
 		for err == nil && areEqual(rec, previousRecord) {
 			previousRecord = rec
 			rec, err = it()
-			//log.Printf("....%v %v %v %v", rec, err, previousRecord, areEqual(rec, previousRecord))
-
 		}
 
 		previousRecord = rec

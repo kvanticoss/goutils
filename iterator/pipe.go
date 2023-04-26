@@ -10,14 +10,13 @@ type RecordWriter func(interface{}) error
 // LesserWriter writes lesser records. Writing nil will close the pipe
 type LesserWriter func(Lesser) error
 
-// NewRecordPipe returns a pipe from writer to Iterator. Bandaid solution for cases where
-// providing an iterator is not feasable and a writer iterface is required. Uses channels under the hood
+// NewRecordPipe returns a pipe from writer to Iterator. Band-aid solution for cases where
+// providing an iterator is not feasible and a writer interface is required. Uses channels under the hood
 func NewRecordPipe() (RecordWriter, RecordIterator) {
 	recChan := make(chan interface{})
 	done := false
 
 	mu := sync.Mutex{}
-
 	f1 := func(record interface{}) error {
 		mu.Lock()
 		defer mu.Unlock()
@@ -45,8 +44,8 @@ func NewRecordPipe() (RecordWriter, RecordIterator) {
 	return f1, f2
 }
 
-// NewLesserPipe returns a pipe from writer to Iterator. Bandaid solution for cases where
-// providing an iterator is not feasable and a writer iterface is required. Uses channels under the hood
+// NewLesserPipe returns a pipe from writer to Iterator. Band-aid solution for cases where
+// providing an iterator is not feasible and a writer interface is required. Uses channels under the hood
 func NewLesserPipe() (LesserWriter, LesserIterator) {
 	recChan := make(chan Lesser)
 
@@ -84,7 +83,7 @@ func NewLesserPipe() (LesserWriter, LesserIterator) {
 	return func(record Lesser) error { return f1(record) }, f2
 }
 
-// NewLesserPipeFromChan turns a channel into an interator; will yeild ErrIteratorStop when the chan is closed
+// NewLesserPipeFromChan turns a channel into an iterator; will yield ErrIteratorStop when the chan is closed
 func NewLesserPipeFromChan(recChan chan Lesser) LesserIterator {
 	return func() (Lesser, error) {
 		record, ok := <-recChan

@@ -75,7 +75,7 @@ func TestSortedRecordIterators(t *testing.T) {
 	}
 
 	if lastVal == 0 {
-		t.Error("Record emitter didn't yeild any records")
+		t.Error("Record emitter didn't yield any records")
 	}
 }
 

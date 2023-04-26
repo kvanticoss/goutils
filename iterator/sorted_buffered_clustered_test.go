@@ -67,7 +67,7 @@ func (stats partitionStats) print(writersCreated int, details bool) {
 	}
 }
 
-func TestClusterdBuffers(t *testing.T) {
+func TestClusteredBuffers(t *testing.T) {
 
 	tests := []struct {
 		ids        float64
@@ -125,7 +125,7 @@ func TestClusterdBuffers(t *testing.T) {
 		var r interface{}
 		var err error
 
-		it := iterator.NewBufferedClusterIteartor(test_utils.DummyIterator(test.ids, test.days, test.records), test.sortBuffer)
+		it := iterator.NewBufferedClusterIterator(test_utils.DummyIterator(test.ids, test.days, test.records), test.sortBuffer)
 
 		stats := partitionStats{}
 		writers := map[string]bool{}
