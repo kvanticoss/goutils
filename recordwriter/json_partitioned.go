@@ -11,7 +11,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// NewLineJSONPartitioned extracts possible partitions from the records yeilded by the iterator
+// NewLineJSONPartitioned extracts possible partitions from the records yielded by the iterator
 // and writes them to the cache (and underlying writer) under the key {record.GetPartitions().ToPartitionKey()}/unsorted_records_s{suffix}.json
 func NewLineJSONPartitioned(
 	it iterator.RecordIterator,

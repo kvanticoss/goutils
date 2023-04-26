@@ -56,7 +56,7 @@ func valsToTestIt(partitions keyvaluelist.KeyValues, vals ...int) iterator.Lesse
 		}
 		res := vals[0]
 		vals = vals[1:]
-		//log.Printf("yeilding %d", res)
+		//log.Printf("yielding %d", res)
 		return res, &test_utils.SortableStruct{
 			Val:        res,
 			Partitions: partitions,
@@ -146,7 +146,7 @@ func BenchmarkJsonWriter(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		b.StopTimer()
-		it := iterator.NewBufferedClusterIteartor(
+		it := iterator.NewBufferedClusterIterator(
 			test_utils.GetRandomLesserIterator(maxConcurrentPartions*20, bufferSize*scale, keyvaluelist.KeyValues{}),
 			bufferSize, // Number to cache in ram before writing
 		)
