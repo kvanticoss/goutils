@@ -128,7 +128,16 @@ ka.Close() // terminates the keep alive an calls callbacks.
 
 ## keyvaluelist
 
-## recordbuffer
+an ordered key-value set. Useful to build hive-style partition filters (e.g. `/date=2023-01-01/age=54`)
+
+`NewKeyValuesFromPath("foo=bar/key=value) => []KeyValues`
+
+`kvl := []KeyValues{{"foo","bar"},{"key","value"}}`
+
+`kvl.ToPartitionKey() => "foo=bar/key=value"`
+
+`kvl.AsMap() => map[string]string{"foo":"bar", "key":"value"}`
+
 
 ## recordwriter
 

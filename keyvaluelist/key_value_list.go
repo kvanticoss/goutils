@@ -7,7 +7,7 @@ import (
 // KeyValues is an ordered list of KeyValue elements.
 type KeyValues []KeyValue
 
-// NewKeyValuesFromPath parses a haddop style path and retuns any valid (if any) partition definitions as KeyValue pairs
+// NewKeyValuesFromPath parses a hadoop/hive style path and returns any valid (if any) partition definitions as KeyValue pairs
 func NewKeyValuesFromPath(path string) KeyValues {
 	res := KeyValues{}
 	for _, part := range strings.Split(path, "/") {
@@ -28,7 +28,7 @@ func (keyvals KeyValues) ToPartitionKey() string {
 	return strings.Join(partitions, "/")
 }
 
-// AsMap returns the ordered KeyValue list as an unorderd map
+// AsMap returns the ordered KeyValue list as an unordered map
 func (keyvals KeyValues) AsMap() map[string]string {
 	res := map[string]string{}
 	for _, kv := range keyvals {

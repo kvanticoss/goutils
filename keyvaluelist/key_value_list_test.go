@@ -118,7 +118,7 @@ func TestKeyValueToPrefixFilter(t *testing.T) {
 				keyvals.KeyValue{Key: "test1", Value: "value1"},
 				keyvals.KeyValue{Key: "test2", Value: "value2"},
 			},
-			path: "gs://test_NUM/test1=value1/randomcrap/test2=value2/",
+			path: "gs://test_NUM/test1=value1/invalid_partition/test2=value2/",
 			res:  true,
 		},
 		{
@@ -126,7 +126,7 @@ func TestKeyValueToPrefixFilter(t *testing.T) {
 				keyvals.KeyValue{Key: "test1", Value: "value1"},
 				keyvals.KeyValue{Key: "test2", Value: "value2"},
 			},
-			path: "gs://test_NUM/test1=value1/randomcrap/test2=value2/file.json.gz",
+			path: "gs://test_NUM/test1=value1/invalid_partition/test2=value2/file.json.gz",
 			res:  true,
 		},
 		{
@@ -134,7 +134,7 @@ func TestKeyValueToPrefixFilter(t *testing.T) {
 				keyvals.KeyValue{Key: "test1", Value: "value1"},
 				keyvals.KeyValue{Key: "test2", Value: "value2"},
 			},
-			path: "gs://test_NUM/test2=value2/randomcrap/test1=value1/file.json.gz",
+			path: "gs://test_NUM/test2=value2/invalid_partition/test1=value1/file.json.gz",
 			res:  true,
 		},
 	}
