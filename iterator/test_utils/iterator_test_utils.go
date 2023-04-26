@@ -59,7 +59,7 @@ func GetReverseLesserIterator(max int, maybePartitions keyvaluelist.KeyValues) i
 	}
 }
 
-// GetRandomLesserIterator returns an iterators which yeilds (stable) random-looking numbers in [0,n) at most maxElements times
+// GetRandomLesserIterator returns an iterators which yields (stable) random-looking numbers in [0,n) at most maxElements times
 func GetRandomLesserIterator(maxNum, maxElements int, maybePartitions keyvaluelist.KeyValues) iterator.LesserIterator {
 	i := 0
 	rand.Seed(int64(maxNum))

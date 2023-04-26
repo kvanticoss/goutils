@@ -1,6 +1,6 @@
 package iterator
 
-// CombineIterators will yeild the results from each of the consisting iterators
+// CombineIterators will yield the results from each of the consisting iterators
 // the error ErrIteratorStop is expected to progress to the next iterator
 func CombineIterators(iterators ...RecordIterator) RecordIterator {
 	var f func() (interface{}, error)
@@ -18,7 +18,7 @@ func CombineIterators(iterators ...RecordIterator) RecordIterator {
 	return f
 }
 
-// CombineLesserIterators will yeild the results from each of the consisting iterators
+// CombineLesserIterators will yield the results from each of the consisting iterators
 // the error ErrIteratorStop is expected to progress to the next iterator. To combine LesserIterators in
 // sorted fashion use SortedLesserIterators()
 func CombineLesserIterators(iterators ...LesserIterator) LesserIterator {

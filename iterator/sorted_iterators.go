@@ -1,6 +1,6 @@
 package iterator
 
-// SortedRecordIterators combines a list of iterators; always yeilding the lowest value (if the records are of type Lesser)
+// SortedRecordIterators combines a list of iterators; always yielding the lowest value (if the records are of type Lesser)
 // available from all iterators. To do this it keeps a local "peak cache" of the next
 // value for each iterator. This means that iterators that produces data from volatile
 // sources (e.g time) might be experience unexpected results.
@@ -56,7 +56,7 @@ func SortedRecordIterators(iterators []RecordIterator) (RecordIterator, error) {
 	}, nil
 }
 
-// SortedLesserIterators combines a list of iterators; always yeilding the lowest value
+// SortedLesserIterators combines a list of iterators; always yielding the lowest value
 // available from all iterators. To do this it keeps a local "peak cache" of the next
 // value for each iterator. This means that iterators that produces data from volatile
 // sources (e.g time) might be experience unexpected results.
