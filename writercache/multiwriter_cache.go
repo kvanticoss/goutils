@@ -14,7 +14,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 )
 
-// Cache is a utillity that keeps an index of multiple writers, indexed by a string (most often path)
+// Cache is a utility that keeps an index of multiple writers, indexed by a string (most often path)
 // if a writer is requested and doesn't exist it gets created (using the provided factory). Writers that aren't
 // used for long enough are automatically closed. All writers are also closed on the ctx.Done.
 type Cache struct {
@@ -71,7 +71,7 @@ func NewCache(ctx context.Context, writerFactory writerfactory.WriterFactory, tt
 	}
 
 	c.writerFactory = func(path string) (wc eioutil.WriteCloser, err error) {
-		// Suffix should be an always lexographically increasing id
+		// Suffix should be an always lexicographically increasing id
 		suffix := fmt.Sprintf("%s_%d_%04d", hostname, time.Now().Unix(), c.writersCreated)
 		newSuffixedPath := strings.Replace(path, "{suffix}", suffix, -1)
 
@@ -81,7 +81,7 @@ func NewCache(ctx context.Context, writerFactory writerfactory.WriterFactory, tt
 		}
 
 		if maxCacheEntires > 0 && len(c.writers) > maxCacheEntires {
-			//log.Printf("Cache is %d and max is %d; pruing", len(c.writers), maxCacheEntires)
+			//log.Printf("Cache is %d and max is %d; pruning", len(c.writers), maxCacheEntires)
 			go c.pruneCache()
 		}
 
@@ -117,8 +117,7 @@ func (mfw *Cache) pruneCache() {
 	}
 	mfw.mutex.Unlock()
 
-	mfw.ClosePath(path)
-	return
+	_ = mfw.ClosePath(path)
 }
 
 // Close closes all opened writers; will continue on error and return all (if any) errors
