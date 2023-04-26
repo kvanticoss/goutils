@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/iterator/test_utils"
+	"github.com/kvanticoss/goutils/internal/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator/test_utils"
 	"github.com/kvanticoss/goutils/keyvaluelist"
 
 	"github.com/stretchr/testify/assert"
@@ -125,7 +125,7 @@ func TestClusteredBuffers(t *testing.T) {
 		var r interface{}
 		var err error
 
-		it := iterator.NewBufferedClusterIterator(test_utils.DummyIterator(test.ids, test.days, test.records), test.sortBuffer)
+		it := iterator.NewBufferedClusterIterator(test_utils.DummyIterator(test.ids, test.days, test.records).ToLesserIterator(), test.sortBuffer)
 
 		stats := partitionStats{}
 		writers := map[string]bool{}

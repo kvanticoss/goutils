@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kvanticoss/goutils/eioutil"
-	"github.com/kvanticoss/goutils/writercache"
+	"github.com/kvanticoss/goutils/internal/writercache"
 
 	"github.com/stretchr/testify/assert"
 )

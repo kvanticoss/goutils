@@ -4,7 +4,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator"
 
 	"github.com/stretchr/testify/assert"
 )

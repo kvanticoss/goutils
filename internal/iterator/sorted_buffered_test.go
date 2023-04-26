@@ -3,8 +3,8 @@ package iterator_test
 import (
 	"testing"
 
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/iterator/test_utils"
+	"github.com/kvanticoss/goutils/internal/iterator"
+	"github.com/kvanticoss/goutils/internal/iterator/test_utils"
 	"github.com/kvanticoss/goutils/keyvaluelist"
 )
 
