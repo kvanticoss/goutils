@@ -3,6 +3,7 @@ package eioutil_test
 import (
 	"bytes"
 	"context"
+	"io"
 	"sync"
 	"testing"
 	"time"
@@ -57,12 +58,35 @@ func TestTimedSelfDestructAfterIdle(t *testing.T) {
 	assert.Error(t, err, "No writes should be possible after timeout")
 }
 
+func TestTimedSelfDestructAfterIdleNoInterupts(t *testing.T) {
+	var buffer bytes.Buffer
+	maxIdle := time.Millisecond * 10
+	testdata := []byte("this is a test")
+
+	w := eioutil.NewPreWriteCallback(&buffer, func(_ []byte) error {
+		time.Sleep(maxIdle * 2)
+		return nil
+	})
+	wc := eioutil.NewWriteCloser(w, func() error { return nil })
+
+	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(context.Background(), maxIdle, wc)
+	// Every write should reset the timeout
+	_, err := writeCloser.Write(testdata)
+	assert.NoError(t, err)
+
+	assert.EqualValues(t, testdata, buffer.Bytes(), "all data should be written even if a timeout occurs")
+
+	// Additional writes should fail
+	_, err = writeCloser.Write(testdata)
+	assert.EqualValues(t, eioutil.ErrAlreadyClosed, err)
+
+}
+
 func BenchmarkNewWriterCloserWithSelfDestructAfterIdle(b *testing.B) {
 	b.StopTimer()
-	var buffer bytes.Buffer
 	maxIdle := time.Second * 2
 	testdata := []byte("this is a test..") //
-	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(context.Background(), maxIdle, eioutil.NewWriteNOPCloser(&buffer))
+	writeCloser := eioutil.NewWriterCloserWithSelfDestructAfterIdle(context.Background(), maxIdle, eioutil.NewWriteNOPCloser(io.Discard))
 	tstart := time.Now()
 	b.StartTimer()
 	for n := 0; n < b.N; n++ {
@@ -75,7 +99,7 @@ func BenchmarkNewWriterCloserWithSelfDestructAfterIdle(b *testing.B) {
 	}
 	b.StopTimer()
 
-	b.Logf("Took %v to save 16 byte * 1 000 000 => 16 MB %d times", time.Now().Sub(tstart), b.N)
+	b.Logf("Took %v to save 16 byte * 1 000 000 => 16 MB %d times", time.Since(tstart), b.N)
 
 	writeCloser.Close()
 

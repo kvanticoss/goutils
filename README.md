@@ -21,11 +21,82 @@ The pattern above where bo is re-initialized from `SleepAndIncr()` is advised as
 handles null instances of &RandExpBackoff{} using sane defaults.
 
 
-## concurrent
-
-WIP - DO NOT USE.
-
 ## eioutil
+
+extended ioutil for handling streams.
+
+`NewReadCloser` - Add a custom close hook on a reader.
+```golang
+readCloser := eioutil.NewReadCloser(r, func() error {
+  // custom close hook on a reader.
+})
+
+```
+
+`NewWriteCloser` - Add a custom close hook on a Writer. `NewWriteNOPCloser(w)` adds an empty close hook.
+```golang
+writeCloser := eioutil.NewWriteCloser(w, func() error {
+  // custom close hook on the writer.
+  // useful to in the case of gzip writers where two writers have to be cancelled but you might only
+  // be able to return 1 WriteCloser
+})
+
+```
+
+`NewSyncedWriteCloser(writeCloser io.WriteCloser)` - Make a WriteCloser safe for concurrent writes.
+each write will be mutex protected but it is up to the consumer to ensure that atomic writes can be
+interlaced.
+
+```golang
+mutexWriteCloser := eioutil.NewWriteCloser(writeCloser)
+```
+
+`NewPreWriteCallback(w, callbacks ...func([]byte) error)` - Pre write Hook
+
+`NewPostWriteCallback(w, callbacks ...func([]byte) error)` - Post write hook
+
+`NewPrePostWriteCallback(w, callbacks ...func([]byte) error)` - Pre and Post write hook
+
+Spins up a new io.MulitiWriter where the callbacks are invoked before the underlying writer. Errors in the callback will block/stop writes to the underlying writer.
+
+Can be use to block/delay writes as well as conditionally abort writes.
+
+Example with limiting the number of bytes written.
+```golang
+limit := 1000
+written := 0
+limitWriter := eioutil.NewPreWriteCallback(writeCloser, func(b []byte) error {
+  size := len(b)
+  if size + writte > limit {
+    return fmt.Error("too large; won't write")
+  }
+  return nil
+})
+```
+
+Example with limiting the number of bytes written per second.
+```golang
+bps := 1024 // 1 kb/s
+limiter := rate.NewLimiter(rate.Limit(bps), bps) // "golang.org/x/time/rate"
+
+limitWriter := eioutil.NewPreWriteCallback(writeCloser, func(b []byte) error {
+  limiter.WaitN(context.TODO(), len(b)); err != nil {
+		return n, err
+	}
+  return nil
+})
+```
+
+
+`NewWriterCloserWithSelfDestructAfterMaxBytes(w, maxBytes)` - Create a writer which
+after maxBytes automatically closes the Writer after which new Write()-calls will
+return `ErrAlreadyClosed`
+
+
+`NewWriterCloserWithSelfDestructAfterIdle(ctx, maxIdle, writeCloser)` - Create a writer which
+after after some inactivity automatically closes the writer. after which, new Write()-calls will
+return `ErrAlreadyClosed`. A timer is reset on each write before a Write()-call. Any Close()
+call is blocked during the write.
 
 ## fdbtuple
 

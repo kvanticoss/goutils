@@ -33,6 +33,7 @@ func NewReadCloser(r io.Reader, closer func() error) ReadCloser {
 }
 
 // NewReadNOPCloser returns a ReadCloser that have a NOP closer method.
+// Deprecated: use io.NopCloser() instead (available since Go 1.16)
 func NewReadNOPCloser(r io.Reader) ReadCloser {
 	return NewReadCloser(r, nil)
 }
