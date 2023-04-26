@@ -17,7 +17,7 @@ func GetLocalWriterFactory(basePath string) WriterFactory {
 		os.MkdirAll(filepath.Dir(basePath+path), os.ModePerm)
 		w, err := os.Create(basePath + path)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		return w, err
 	}
