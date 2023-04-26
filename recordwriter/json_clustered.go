@@ -11,7 +11,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// NewLineJSONClustered extracts possible partitions from the records yeilded by the sorted iterator
+// NewLineJSONClustered extracts possible partitions from the records yielded by the sorted iterator
 // and writes them to the cache (and underlying writer) with the cluster-ids which guarrantees sorted order within each cluster
 // Note the writers will NOT be closed by NewLineJSONClustered; that should be handled after it has been returned; as such it is
 // usefull to use a writercache.Cache{}
