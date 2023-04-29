@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/kvanticoss/goutils/eioutil"
 	"github.com/kvanticoss/goutils/iterator"
@@ -26,6 +27,10 @@ func NewLineJSONPartitionedBySize[T any](
 ) error {
 	var record interface{}
 	var err error
+
+	if baseName == "" {
+		baseName, _ = os.Hostname()
+	}
 
 	w, err := getNewFileWriter(wf, baseName, maxBytesParBatch, gz)
 	if err != nil {
