@@ -12,7 +12,7 @@ import (
 	"github.com/kvanticoss/goutils/writerfactory"
 )
 
-func TestNewLineJSONBatched(t *testing.T) {
+func TestNewLineJSONPartitionedBySize(t *testing.T) {
 	type args[T any] struct {
 		it               iterator.RecordIterator[T]
 		maxBytesParBatch int
