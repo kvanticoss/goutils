@@ -1,7 +1,9 @@
 package eioutil
 
-// NewWriterCloserWithSelfDestructAfterMaxBytes will add a timeout that when reached the writecloser has been inactive (no writes)
-// for the duration, it will be automatically closed and any future writes will yield ErrDestructed
+// NewWriterCloserWithSelfDestructAfterMaxBytes will automatically close a file once
+// maxBytes have been written to it. Any further writes will return an eioutil.ErrAlreadyClosed
+// if the underlying writer returns an error on Close(); that error will be returned on a write
+// which would have forced a file to be closed.
 func NewWriterCloserWithSelfDestructAfterMaxBytes(maxBytes int, wc WriteCloser) WriteCloser {
 	bytesWritten := 0
 	closed := false
