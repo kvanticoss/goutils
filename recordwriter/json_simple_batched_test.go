@@ -30,7 +30,7 @@ func TestNewLineJSONPartitionedBySize(t *testing.T) {
 			wantErr: iterator.ErrIteratorStop,
 			args: args[interface{}]{
 				base_name: "test",
-				it: test_utils.DummyIteratorFromArr([]interface{}{
+				it: test_utils.NewDummyIteratorFromArr([]interface{}{
 					map[string]interface{}{"a": "a1", "b": "b1", "c": "c1", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a2", "b": "b2", "c": "c2", "d": []string{"arr1", "arr2"}},
 				}),
@@ -50,7 +50,7 @@ func TestNewLineJSONPartitionedBySize(t *testing.T) {
 			wantErr: iterator.ErrIteratorStop,
 			args: args[interface{}]{
 				base_name: "test",
-				it: test_utils.DummyIteratorFromArr([]interface{}{
+				it: test_utils.NewDummyIteratorFromArr([]interface{}{
 					map[string]interface{}{"a": "a1", "b": "b1", "c": "c1", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a2", "b": "b2", "c": "c2", "d": []string{"arr1", "arr2"}},
 				}),
@@ -76,7 +76,7 @@ func TestNewLineJSONPartitionedBySize(t *testing.T) {
 			wantErr: iterator.ErrIteratorStop,
 			args: args[interface{}]{
 				base_name: "test",
-				it: test_utils.DummyIteratorFromArr([]interface{}{
+				it: test_utils.NewDummyIteratorFromArr([]interface{}{
 					map[string]interface{}{"a": "a1", "b": "b1", "c": "c1", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a2", "b": "b2", "c": "c2", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a3", "b": "b3", "c": "c3", "d": []string{"arr1", "arr2"}},
@@ -104,7 +104,7 @@ func TestNewLineJSONPartitionedBySize(t *testing.T) {
 			wantErr: iterator.ErrIteratorStop,
 			args: args[interface{}]{
 				base_name: "test",
-				it: test_utils.DummyIteratorFromArr([]interface{}{
+				it: test_utils.NewDummyIteratorFromArr([]interface{}{
 					map[string]interface{}{"a": "a1", "b": "b1", "c": "c1", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a2", "b": "b2", "c": "c2", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a3", "b": "b3", "c": "c3", "d": []string{"arr1", "arr2"}},
@@ -129,7 +129,7 @@ func TestNewLineJSONPartitionedBySize(t *testing.T) {
 			wantErr: iterator.ErrIteratorStop,
 			args: args[interface{}]{
 				base_name: "test",
-				it: test_utils.DummyIteratorFromArr([]interface{}{
+				it: test_utils.NewDummyIteratorFromArr([]interface{}{
 					map[string]interface{}{"a": "a1", "b": "b1", "c": "c1", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a2", "b": "b2", "c": "c2", "d": []string{"arr1", "arr2"}},
 					map[string]interface{}{"a": "a3", "b": "b3", "c": "c3", "d": []string{"arr1", "arr2"}},

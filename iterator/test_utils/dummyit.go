@@ -71,7 +71,7 @@ func DummyIterator(ids float64, days float64, records int) iterator.RecordIterat
 }
 
 // DummyIterator will return a RecordIterator based on the provided list of records
-func DummyIteratorFromArr[T any](arr []T) iterator.RecordIterator[T] {
+func NewDummyIteratorFromArr[T any](arr []T) iterator.RecordIterator[T] {
 	index := 0
 	return func() (T, error) {
 		if index >= len(arr) {
