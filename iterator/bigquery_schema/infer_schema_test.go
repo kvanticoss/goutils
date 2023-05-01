@@ -297,10 +297,11 @@ func TestTableFieldSchema_mergeTypes(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		state    state
-		arg      FieldType
-		expected state
+		name            string
+		state           state
+		arg             FieldType
+		expected        state
+		isNotReversalbe bool
 	}{
 		{
 			name: "string+string => string",
@@ -312,55 +313,71 @@ func TestTableFieldSchema_mergeTypes(t *testing.T) {
 				err:  nil,
 				Type: StringFieldType,
 			},
+		},
+		// string + Ints are not commutative since "123" is a number but 123 is not a string
+		{
+			name: "integer+string => str",
+			state: state{
+				Type: IntegerFieldType,
+			},
+			arg: StringFieldType,
+			expected: state{
+				err:  nil,
+				Type: StringFieldType,
+			},
+			isNotReversalbe: true,
 		}, {
-			name: "string+integer => string",
+			name: "string+integer => json",
 			state: state{
 				Type: StringFieldType,
 			},
 			arg: IntegerFieldType,
 			expected: state{
 				err:  nil,
-				Type: StringFieldType,
+				Type: JSONFieldType,
 			},
-		}, {
-			name: "string+numeric => string",
+			isNotReversalbe: true,
+		},
+
+		{
+			name: "string+numeric => json",
 			state: state{
 				Type: StringFieldType,
 			},
 			arg: NumericFieldType,
 			expected: state{
 				err:  nil,
-				Type: StringFieldType,
+				Type: JSONFieldType,
 			},
 		}, {
-			name: "string+bignumeric => string",
+			name: "string+bignumeric => json",
 			state: state{
 				Type: StringFieldType,
 			},
 			arg: BigNumericFieldType,
 			expected: state{
 				err:  nil,
-				Type: StringFieldType,
+				Type: JSONFieldType,
 			},
 		}, {
-			name: "string+float => string",
+			name: "string+float => json",
 			state: state{
 				Type: StringFieldType,
 			},
 			arg: FloatFieldType,
 			expected: state{
 				err:  nil,
-				Type: StringFieldType,
+				Type: JSONFieldType,
 			},
 		}, {
-			name: "string+boolean => string",
+			name: "string+boolean => json",
 			state: state{
 				Type: StringFieldType,
 			},
 			arg: BooleanFieldType,
 			expected: state{
 				err:  nil,
-				Type: StringFieldType,
+				Type: JSONFieldType,
 			},
 		}, {
 			name: "string+timestamp => string",
@@ -413,14 +430,14 @@ func TestTableFieldSchema_mergeTypes(t *testing.T) {
 				Type: BigNumericFieldType,
 			},
 		}, {
-			name: "bool+integer => integer",
+			name: "bool+integer => json",
 			state: state{
 				Type: BooleanFieldType,
 			},
 			arg: IntegerFieldType,
 			expected: state{
 				err:  nil,
-				Type: IntegerFieldType,
+				Type: JSONFieldType,
 			},
 		},
 	}
@@ -441,6 +458,9 @@ func TestTableFieldSchema_mergeTypes(t *testing.T) {
 			}
 
 			// The same test but reserved order of the arguments. The result should be the same
+			if tt.isNotReversalbe {
+				return
+			}
 			i = &TableFieldSchema{
 				err:  tt.state.err,
 				Type: string(tt.arg),
