@@ -1,14 +1,13 @@
 package writerfactory
 
 import (
+	"io"
 	"path"
-
-	"github.com/kvanticoss/goutils/eioutil"
 )
 
 // WrapWFWithPrefix adds a prefix to all writes conducted by the writerfactory
 func WrapWFWithPrefix(wf WriterFactory, prefix string) WriterFactory {
-	return func(writePath string) (eioutil.WriteCloser, error) {
+	return func(writePath string) (io.WriteCloser, error) {
 		return wf(path.Join(prefix, writePath))
 	}
 }
