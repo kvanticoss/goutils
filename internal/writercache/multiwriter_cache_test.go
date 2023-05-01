@@ -3,6 +3,7 @@ package writercache_test
 import (
 	"bytes"
 	"context"
+	"io"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ func TestMultiFileStreamingWithNoTimeout(t *testing.T) {
 
 	ctx := context.Background()
 	db := map[string]*bytes.Buffer{}
-	wf := func(path string) (wc eioutil.WriteCloser, err error) {
+	wf := func(path string) (wc io.WriteCloser, err error) {
 		db[path] = &bytes.Buffer{}
 		return eioutil.NewWriteNOPCloser(db[path]), nil
 	}
@@ -87,7 +88,7 @@ func TestMultiFileStreamingWithTimeout(t *testing.T) {
 	mutex := sync.Mutex{}
 	ctx := context.Background()
 	db := map[string]*bytes.Buffer{}
-	wf := func(path string) (wc eioutil.WriteCloser, err error) {
+	wf := func(path string) (wc io.WriteCloser, err error) {
 		db[path] = &bytes.Buffer{}
 		return eioutil.NewWriteCloser(db[path], func() error {
 			mutex.Lock()

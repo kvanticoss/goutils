@@ -1,15 +1,15 @@
 package writerfactory
 
 import (
+	"io"
 	"strings"
 
-	"github.com/kvanticoss/goutils/eioutil"
 	"github.com/kvanticoss/goutils/gzip"
 )
 
 // WrapWFWithGzip adds gzip compresison to the writers that is returned by the underlying WriterFactory
 func WithGzip(wf WriterFactory) WriterFactory {
-	return func(path string) (eioutil.WriteCloser, error) {
+	return func(path string) (io.WriteCloser, error) {
 		if !strings.HasPrefix(path, ".gz") {
 			path = path + ".gz"
 		}

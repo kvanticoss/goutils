@@ -3,6 +3,7 @@ package writercache
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -29,7 +30,7 @@ type Cache struct {
 }
 
 type timedWriter struct {
-	eioutil.WriteCloser
+	io.WriteCloser
 
 	lastAccessMutex sync.RWMutex
 	lastAccess      time.Time
@@ -70,7 +71,7 @@ func NewCache(ctx context.Context, writerFactory writerfactory.WriterFactory, tt
 		hostname = ""
 	}
 
-	c.writerFactory = func(path string) (wc eioutil.WriteCloser, err error) {
+	c.writerFactory = func(path string) (wc io.WriteCloser, err error) {
 		// Suffix should be an always lexicographically increasing id
 		suffix := fmt.Sprintf("%s_%d_%04d", hostname, time.Now().Unix(), c.writersCreated)
 		newSuffixedPath := strings.Replace(path, "{suffix}", suffix, -1)
@@ -125,7 +126,7 @@ func (mfw *Cache) Close() error {
 	var allErrors *multierror.Error
 
 	// Avoid races since we will be clearing keys form  mfw.writers in the Cloase calls
-	writercopy := map[string]eioutil.WriteCloser{}
+	writercopy := map[string]io.WriteCloser{}
 	mfw.mutex.Lock()
 	for k, v := range mfw.writers {
 		writercopy[k] = v
@@ -218,7 +219,7 @@ func (mfw *Cache) getWriter(path string) (*timedWriter, error) {
 }
 
 // GetWriter returns a synced write closer. The method is a WriterFactory
-func (mfw *Cache) GetWriter(path string) (eioutil.WriteCloser, error) {
+func (mfw *Cache) GetWriter(path string) (io.WriteCloser, error) {
 	return mfw.getWriter(path)
 }
 

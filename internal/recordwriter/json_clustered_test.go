@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -66,7 +67,7 @@ func valsToTestIt(partitions keyvaluelist.KeyValues, vals ...int) iterator.Lesse
 
 func TestMultiJSONSClusteredAndPartitioned(t *testing.T) {
 	db := map[string]*bytes.Buffer{}
-	wf := func(path string) (wc eioutil.WriteCloser, err error) {
+	wf := func(path string) (wc io.WriteCloser, err error) {
 		if _, ok := db[path]; !ok {
 			db[path] = &bytes.Buffer{}
 		}
@@ -132,7 +133,7 @@ func BenchmarkJsonWriter(b *testing.B) {
 	ctx := context.Background()
 	db := map[string]*bytes.Buffer{}
 	writers := 0
-	wf := func(path string) (wc eioutil.WriteCloser, err error) {
+	wf := func(path string) (wc io.WriteCloser, err error) {
 		db[path] = &bytes.Buffer{}
 		writers++
 		time.Sleep(simulatedCostOfOpeningfile)
