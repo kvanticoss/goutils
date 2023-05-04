@@ -10,7 +10,7 @@ import (
 // WrapWFWithGzip adds gzip compresison to the writers that is returned by the underlying WriterFactory
 func WithGzip(wf WriterFactory) WriterFactory {
 	return func(path string) (io.WriteCloser, error) {
-		if !strings.HasPrefix(path, ".gz") {
+		if !strings.HasSuffix(path, ".gz") {
 			path = path + ".gz"
 		}
 
