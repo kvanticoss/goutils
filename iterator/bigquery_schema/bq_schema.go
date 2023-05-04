@@ -24,6 +24,7 @@ package bigquery_schema
 // This file only removes elements and is not compatible with the original.
 
 import (
+	"encoding/json"
 	"math/big"
 	"reflect"
 	"time"
@@ -128,7 +129,8 @@ const (
 )
 
 var (
-	typeOfGoTime    = reflect.TypeOf(time.Time{})
-	typeOfRat       = reflect.TypeOf(&big.Rat{})
-	typeOfByteSlice = reflect.TypeOf([]byte{})
+	typeOfGoTime     = reflect.TypeOf(time.Time{})
+	typeOfRat        = reflect.TypeOf(&big.Rat{})
+	typeOfByteSlice  = reflect.TypeOf([]byte{})
+	typeOfJSONNumber = reflect.TypeOf(json.Number(""))
 )

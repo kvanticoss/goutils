@@ -1,6 +1,7 @@
 package bigquery_schema
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -87,6 +88,10 @@ func (i *TableFieldSchema) updateInference(r any) {
 
 	case typeOfRat:
 		i.mergeTypes(BigNumericFieldType)
+
+	case typeOfJSONNumber:
+		i.updateInference((r.(json.Number)).String())
+		return
 	}
 
 	switch t.Kind() {
