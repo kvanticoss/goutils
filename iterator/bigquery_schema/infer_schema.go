@@ -16,13 +16,14 @@ import (
 
 // InferBQSchema infers a bigquery schema from records yielded by the iterator.
 // records are assumed to originate from JSON parsed data and as such strings
-// can contain dates, timestamps, integers, floats.
-// that type (e.g. "2020-01-01" will be inferred to be a date).
+// can contain dates, timestamps, integers, floats will be converted to correct type
+// (e.g. "2020-01-01" will be inferred to be a date).
 // this tries to mimic how BigQuery infers schema from JSON data.
 // if two records have conflicting types for the same field, the field will be
 // inferred to be of the type which can capture both values; most often this is
-// "STRING" or "JSON". Conflicting types such as bool and float will be inferred
-// as "JSON".
+// "STRING" or "JSON" but an float can capture integer values (ish) and as such
+// a field containing both integers and floats will be inferred to be a float.
+// Conflicting types such as bool and float will be inferred as "JSON".
 func InferBQSchema[T any](it iterator.RecordIterator[T]) (
 	it2 iterator.RecordIterator[T],
 	getSchema func() TableFieldSchema,
@@ -469,13 +470,9 @@ func isInteger(strVal string) bool {
 
 func isBoolean(strVal string) bool {
 	strVal = strings.ToLower(strVal)
-	if strVal == "true" || strVal == "false" {
-		return true
-	}
-	if strVal == "1" || strVal == "0" {
-		return true
-	}
-	if strVal == "t" || strVal == "f" {
+	if strVal == "true" || strVal == "false" ||
+		strVal == "1" || strVal == "0" ||
+		strVal == "t" || strVal == "f" {
 		return true
 	}
 	return false
