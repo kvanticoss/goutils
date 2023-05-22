@@ -7,9 +7,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/iterator/test_utils"
-	"github.com/kvanticoss/goutils/writerfactory"
+	"github.com/kvanticoss/goutils/v2/iterator"
+	"github.com/kvanticoss/goutils/v2/iterator/test_utils"
+	"github.com/kvanticoss/goutils/v2/writerfactory"
 )
 
 func TestNewLineJSONPartitionedBySize(t *testing.T) {

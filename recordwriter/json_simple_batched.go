@@ -6,9 +6,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/kvanticoss/goutils/eioutil"
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/writerfactory"
+	"github.com/kvanticoss/goutils/v2/eioutil"
+	"github.com/kvanticoss/goutils/v2/iterator"
+	"github.com/kvanticoss/goutils/v2/writerfactory"
 
 	jsoniter "github.com/json-iterator/go"
 )

@@ -4,8 +4,8 @@ import (
 	"log"
 	"math/rand"
 
-	"github.com/kvanticoss/goutils/internal/iterator"
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/internal/iterator"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 )
 
 // SortableStruct is a struct which implements the Lesser-interface

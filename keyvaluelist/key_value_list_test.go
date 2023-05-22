@@ -3,7 +3,7 @@ package keyvaluelist_test
 import (
 	"testing"
 
-	keyvals "github.com/kvanticoss/goutils/keyvaluelist"
+	keyvals "github.com/kvanticoss/goutils/v2/keyvaluelist"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/iterator"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 )
 
 type dummy struct {

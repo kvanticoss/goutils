@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"io"
 
-	"github.com/kvanticoss/goutils/internal/iterator"
+	"github.com/kvanticoss/goutils/v2/internal/iterator"
 )
 
 // ReadWriteResetterFactory should return a RecordBuffer. The simplest implementation of this factory is func(_ []byte) *bytes.Buffer {return &bytes.NewBuffer{}}

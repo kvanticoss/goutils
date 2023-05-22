@@ -3,7 +3,7 @@ package test_utils
 import (
 	"log"
 
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 )
 
 // SortableStruct is a struct which implements the Lesser-interface

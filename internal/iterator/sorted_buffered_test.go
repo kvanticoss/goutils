@@ -3,9 +3,9 @@ package iterator_test
 import (
 	"testing"
 
-	"github.com/kvanticoss/goutils/internal/iterator"
-	"github.com/kvanticoss/goutils/internal/iterator/test_utils"
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/internal/iterator"
+	"github.com/kvanticoss/goutils/v2/internal/iterator/test_utils"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 )
 
 func TestSortedRecordBufferIterators(t *testing.T) {

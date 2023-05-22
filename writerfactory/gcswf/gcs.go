@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"cloud.google.com/go/storage"
-	"github.com/kvanticoss/goutils/writerfactory"
+	"github.com/kvanticoss/goutils/v2/writerfactory"
 )
 
 // GetGCSWriterFactory returns a writerfactory, pointing to the root of the GCS bucket.

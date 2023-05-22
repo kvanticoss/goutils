@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/kvanticoss/goutils/gzip"
+	"github.com/kvanticoss/goutils/v2/gzip"
 )
 
 // WrapWFWithGzip adds gzip compresison to the writers that is returned by the underlying WriterFactory

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/kvanticoss/goutils/eioutil"
+	"github.com/kvanticoss/goutils/v2/eioutil"
 )
 
 // GetMemoryWriterFactory returns a writer factory which is backed by RAM

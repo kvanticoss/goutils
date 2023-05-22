@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kvanticoss/goutils/eioutil"
-	"github.com/kvanticoss/goutils/internal/recordwriter"
-	"github.com/kvanticoss/goutils/internal/writercache"
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/eioutil"
+	"github.com/kvanticoss/goutils/v2/internal/recordwriter"
+	"github.com/kvanticoss/goutils/v2/internal/writercache"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 
-	"github.com/kvanticoss/goutils/internal/iterator"
-	"github.com/kvanticoss/goutils/internal/iterator/test_utils"
+	"github.com/kvanticoss/goutils/v2/internal/iterator"
+	"github.com/kvanticoss/goutils/v2/internal/iterator/test_utils"
 
 	"github.com/stretchr/testify/assert"
 )

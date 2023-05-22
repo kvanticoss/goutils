@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/kvanticoss/goutils/internal/iterator"
-	"github.com/kvanticoss/goutils/keyvaluelist"
-	"github.com/kvanticoss/goutils/writerfactory"
+	"github.com/kvanticoss/goutils/v2/internal/iterator"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/writerfactory"
 
 	jsoniter "github.com/json-iterator/go"
 )

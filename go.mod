@@ -1,4 +1,4 @@
-module github.com/kvanticoss/goutils
+module github.com/kvanticoss/goutils/v2
 
 go 1.20
 

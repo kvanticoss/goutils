@@ -3,7 +3,7 @@ package recordwriter
 import (
 	"io"
 
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/v2/iterator"
 
 	jsoniter "github.com/json-iterator/go"
 )

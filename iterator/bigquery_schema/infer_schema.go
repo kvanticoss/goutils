@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kvanticoss/goutils/iterator"
+	"github.com/kvanticoss/goutils/v2/iterator"
 )
 
 // InferBQSchema infers a bigquery schema from records yielded by the iterator.

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kvanticoss/goutils/keepalive"
+	"github.com/kvanticoss/goutils/v2/keepalive"
 )
 
 // NewWriterCloserWithSelfDestructAfterIdle will add a timeout that when reached the writecloser has been inactive (no writes)

@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kvanticoss/goutils/eioutil"
-	"github.com/kvanticoss/goutils/writerfactory"
+	"github.com/kvanticoss/goutils/v2/eioutil"
+	"github.com/kvanticoss/goutils/v2/writerfactory"
 
 	multierror "github.com/hashicorp/go-multierror"
 )

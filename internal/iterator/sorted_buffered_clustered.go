@@ -1,7 +1,7 @@
 package iterator
 
 import (
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 )
 
 const maxLeakybuckets = 6

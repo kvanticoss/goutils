@@ -6,9 +6,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/kvanticoss/goutils/internal/iterator"
-	"github.com/kvanticoss/goutils/internal/iterator/test_utils"
-	"github.com/kvanticoss/goutils/keyvaluelist"
+	"github.com/kvanticoss/goutils/v2/internal/iterator"
+	"github.com/kvanticoss/goutils/v2/internal/iterator/test_utils"
+	"github.com/kvanticoss/goutils/v2/keyvaluelist"
 
 	"github.com/stretchr/testify/assert"
 )

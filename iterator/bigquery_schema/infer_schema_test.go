@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kvanticoss/goutils/iterator"
-	"github.com/kvanticoss/goutils/iterator/test_utils"
+	"github.com/kvanticoss/goutils/v2/iterator"
+	"github.com/kvanticoss/goutils/v2/iterator/test_utils"
 )
 
 func TestInferBQSchema(t *testing.T) {
