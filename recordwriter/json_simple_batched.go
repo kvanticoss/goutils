@@ -2,6 +2,7 @@ package recordwriter
 
 import (
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -9,8 +10,6 @@ import (
 	"github.com/kvanticoss/goutils/v2/eioutil"
 	"github.com/kvanticoss/goutils/v2/iterator"
 	"github.com/kvanticoss/goutils/v2/writerfactory"
-
-	jsoniter "github.com/json-iterator/go"
 )
 
 // NewLineJSON writes all the records from the records iterator as newline json to the writer.
@@ -38,7 +37,7 @@ func NewLineJSONPartitionedBySize[T any](
 	}
 
 	for record, err = it(); err == nil; record, err = it() {
-		d, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(record)
+		d, err := json.Marshal(record)
 		if err != nil {
 			return err
 		}
@@ -48,7 +47,11 @@ func NewLineJSONPartitionedBySize[T any](
 		}
 	}
 
-	return w.Close()
+	if err2 := w.Close(); err2 != nil {
+		return err2
+	}
+
+	return err
 }
 
 func getNewFileWriter(wf writerfactory.WriterFactory, basename string, sizeLimit int, gz bool) (io.WriteCloser, error) {
