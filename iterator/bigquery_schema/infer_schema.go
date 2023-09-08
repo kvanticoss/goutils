@@ -77,6 +77,9 @@ func (i *TableFieldSchema) updateInference(r any) {
 		log.Print("TableFieldSchema.AddToInference called after error")
 		return
 	}
+	if r == nil {
+		return
+	}
 
 	t := reflect.TypeOf(r)
 
